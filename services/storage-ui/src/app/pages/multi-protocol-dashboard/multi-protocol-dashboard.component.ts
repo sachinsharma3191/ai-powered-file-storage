@@ -6,6 +6,7 @@ import { S3BrowserComponent } from '../../components/s3-browser/s3-browser.compo
 import { McpToolsComponent } from '../../components/mcp-tools/mcp-tools.component';
 import { RealTimeNotificationsComponent } from '../../components/real-time-notifications/real-time-notifications.component';
 import { BucketObjectsComponent } from '../../components/bucket-objects/bucket-objects.component';
+import { ChatInterfaceComponent } from '../../components/chat-interface/chat-interface.component';
 
 @Component({
   selector: 'app-multi-protocol-dashboard',
@@ -17,7 +18,8 @@ import { BucketObjectsComponent } from '../../components/bucket-objects/bucket-o
     S3BrowserComponent,
     McpToolsComponent,
     RealTimeNotificationsComponent,
-    BucketObjectsComponent
+    BucketObjectsComponent,
+    ChatInterfaceComponent
   ],
   template: `
     <div class="multi-protocol-dashboard">
@@ -283,6 +285,9 @@ import { BucketObjectsComponent } from '../../components/bucket-objects/bucket-o
           </tab>
         </tabset>
       </div>
+
+      <!-- Chat Interface -->
+      <app-chat-interface></app-chat-interface>
     </div>
   `,
   styles: [`
