@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: s3_ai_mcp_development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Ruby Control Plane
+  storage-control-plane:
+    build:
+      context: ./services/storage-control-plane
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+      REDIS_URL: redis://redis:6379/0
+      SCOPED_JWT_SECRET: rust-integration-secret-key-2024
+      CHUNK_GATEWAY_BASE_URL: http://chunk-gateway:4000
+      CHUNK_GATEWAY_REGION: us-west-2
+    volumes:
+      - ./services/storage-control-plane:/app
+      - bundle_cache:/usr/local/bundle
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails server -b 0.0.0.0 -p 3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Rust Data Plane (Chunk Gateway)
+  chunk-gateway:
+    build:
+      context: ./services/chunk-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      SCOPED_JWT_SECRET: rust-integration-secret-key-2024
+      CHUNK_GATEWAY_REGION: us-west-2
+      BIND_ADDR: 0.0.0.0
+      PORT: 4000
+      RUST_LOG: info
+    volumes:
+      - ./services/chunk-gateway:/app
+      - cargo_cache:/usr/local/cargo/registry
+    depends_on:
+      - storage-control-plane
+    command: cargo run
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Notification Service (Python)
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+    volumes:
+      - ./services/notification-service:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python main.py
+
+  # Outbox Worker (Python)
+  outbox-worker:
+    build:
+      context: ./services/outbox-worker
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+      REDIS_URL: redis://redis:6379/0
+      NOTIFICATION_SERVICE_URL: http://notification-service:5000
+    volumes:
+      - ./services/outbox-worker:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
+    command: python worker.py
+
+  # AI Agent (Python)
+  ai-agent:
+    build:
+      context: ./services/agent
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      STORAGE_API_URL: http://storage-control-plane:3000/api/v1
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+    volumes:
+      - ./services/agent:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      storage-control-plane:
+        condition: service_healthy
+    command: python server.py
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - storage-control-plane
+      - chunk-gateway
+      - ai-agent
+
+volumes:
+  postgres_data:
+  redis_data:
+  bundle_cache:
+  cargo_cache:
+
+networks:
+  default:
+    name: s3-ai-mcp-network

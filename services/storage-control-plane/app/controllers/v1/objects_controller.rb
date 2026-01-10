@@ -118,6 +118,7 @@ module V1
         status: "pending"
       )
 
+      # Use new Rust data plane endpoint
       base_url = chunk_gateway_base_url_for!(bucket.region)
       return if performed?
 
@@ -131,12 +132,14 @@ module V1
         version: version_string
       )
 
-      upload_url = "#{base_url}/v1/objects/#{CGI.escape(bucket.name)}/#{CGI.escape(key)}"
+      # New endpoint format for Rust data plane
+      upload_url = "#{base_url}/dp/v1/objects/#{object_version.id}"
 
       render json: {
         bucket: bucket.name,
         key: key,
         version: object_version.version,
+        object_version_id: object_version.id,
         upload_url: upload_url,
         token: token,
         ttl_seconds: ScopedTokenIssuer::DEFAULT_TTL_SECONDS
@@ -192,6 +195,7 @@ module V1
         return
       end
 
+      # Use new Rust data plane endpoint
       base_url = chunk_gateway_base_url_for!(bucket.region)
       return if performed?
 
@@ -205,12 +209,14 @@ module V1
         version: target_version.version
       )
 
-      download_url = "#{base_url}/v1/objects/#{CGI.escape(bucket.name)}/#{CGI.escape(key)}"
+      # New endpoint format for Rust data plane
+      download_url = "#{base_url}/dp/v1/objects/#{target_version.id}"
 
       render json: {
         bucket: bucket.name,
         key: key,
         version: target_version.version,
+        object_version_id: target_version.id,
         download_url: download_url,
         token: token,
         ttl_seconds: ScopedTokenIssuer::DEFAULT_TTL_SECONDS

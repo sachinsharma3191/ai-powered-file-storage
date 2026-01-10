@@ -18,6 +18,7 @@ module V1
         part_size: part_size
       )
 
+      # Use new Rust data plane endpoint
       base_url = chunk_gateway_base_url_for!(bucket.region)
       return if performed?
 
@@ -36,9 +37,10 @@ module V1
             part_number: part_number
           )
 
+          # New endpoint format for Rust data plane
           presigned_part_urls << {
             part_number: part_number,
-            upload_url: "#{base_url}/v1/uploads/#{upload.upload_id}/parts/#{part_number}",
+            upload_url: "#{base_url}/dp/v1/uploads/#{upload.upload_id}/parts/#{part_number}",
             token: token
           }
         end
@@ -61,17 +63,6 @@ module V1
       part_number = params.require(:part_number).to_i
 
       upload = bucket.multipart_uploads.find_by!(upload_id: upload_id)
-      
-      if upload.status != "initiated"
-        render json: { error: "upload_not_initiated" }, status: :bad_request
-        return
-      end
-
-      if upload.key != key
-        render json: { error: "key_mismatch" }, status: :bad_request
-        return
-      end
-
       base_url = chunk_gateway_base_url_for!(bucket.region)
       return if performed?
 
@@ -81,14 +72,20 @@ module V1
         region: bucket.region,
         action: "put_part",
         bucket: bucket.name,
-        key: key,
-        upload_id: upload_id,
+        key: upload.key,
+        upload_id: upload.upload_id,
         part_number: part_number
       )
 
+      # New endpoint format for Rust data plane
+      upload_url = "#{base_url}/dp/v1/uploads/#{upload.upload_id}/parts/#{part_number}"
+
       render json: {
+        bucket: bucket.name,
+        key: upload.key,
+        upload_id: upload.upload_id,
         part_number: part_number,
-        upload_url: "#{base_url}/v1/uploads/#{upload_id}/parts/#{part_number}",
+        upload_url: upload_url,
         token: token,
         ttl_seconds: ScopedTokenIssuer::DEFAULT_TTL_SECONDS
       }
