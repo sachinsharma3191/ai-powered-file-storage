@@ -1,4 +1,4 @@
-# S3 AI MCP - Project-wide Makefile
+# S3 AI Storage Platform - Project-wide Makefile
 # Comprehensive testing and development automation
 
 .PHONY: help install test test-all test-unit test-integration test-performance
@@ -12,7 +12,7 @@
 
 # Default target
 help:
-	@echo "S3 AI MCP - Development Commands"
+	@echo "S3 AI Storage Platform - Development Commands"
 	@echo ""
 	@echo "🚀 Quick Start:"
 	@echo "  make setup          - Setup development environment"

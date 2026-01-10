@@ -1,6 +1,6 @@
-# File Storage AI MCP Platform
+# S3 AI Storage Platform
 
-A comprehensive, self-hosted file storage platform with AI-powered capabilities, built as a Model Context Protocol (MCP) server. Features S3-compatible API, web UI, and intelligent agent interfaces.
+A comprehensive, self-hosted file storage platform with AI-powered capabilities. Features S3-compatible API, web UI, and intelligent event-driven automation.
 
 ## 🚀 Features
 
@@ -16,8 +16,8 @@ A comprehensive, self-hosted file storage platform with AI-powered capabilities,
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Storage UI    │    │   AI Agent      │    │   CLI Tools     │
-│   (Angular)     │    │   (Python)      │    │   (Python)      │
+│   Storage UI    │    │   CLI Tools     │    │   Monitoring    │
+│   (Angular)     │    │   (Python)      │    │   (Prometheus)  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
@@ -28,21 +28,27 @@ A comprehensive, self-hosted file storage platform with AI-powered capabilities,
 │  • Authentication & Authorization                                 │
 │  • Bucket & Object Management                                     │
 │  • API Key Management                                             │
-│  • Settings & Configuration                                       │
-└─────────────────────────────────┼─────────────────────────────────┘
+│  • Event Emission (Redis Streams)                                 │
+└───────────────────────────────────────────────────────────────────┘
                                  │
-┌─────────────────────────────────┼─────────────────────────────────┐
-│                     Chunk Gateway                                  │
-│                         (Rust)                                    │
-│  • High-Performance File Operations                               │
-│  • Multipart Upload Support                                       │
-│  • Content Streaming                                              │
-└─────────────────────────────────┼─────────────────────────────────┘
-                                 │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│    PostgreSQL   │    │      Redis      │    │  File Storage   │
-│   (Metadata)    │    │    (Queue)      │    │    (Data)       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+                    ┌─────────────┴─────────────┐
+                    │                           │
+        ┌─────────────────┐           ┌─────────────────┐
+        │  AI Agent       │           │  Chunk Gateway  │
+        │  (Python)       │           │  (Rust)         │
+        │ • Event Consumer│           │ • Data Serving  │
+        │ • Decision Engine│          │ • Chunking      │
+        │ • Notifications │           │ • Metrics       │
+        │ • Actions       │           │ • Anomaly Det.  │
+        └─────────────────┘           └─────────────────┘
+                    │                           │
+                    └─────────────┬─────────────┘
+                                  │
+                    ┌─────────────────┐
+                    │   Redis Streams │
+                    │   Events &      │
+                    │   Metrics       │
+                    └─────────────────┘
 ```
 
 ## 🛠 Services
@@ -54,9 +60,17 @@ A comprehensive, self-hosted file storage platform with AI-powered capabilities,
 | **Storage Control Plane** | Ruby on Rails | 3000 | Main API server, authentication, bucket/object management |
 | **Chunk Gateway** | Rust | 4000 | High-performance file operations and streaming |
 | **Storage UI** | Angular/TypeScript | 4200 | Web-based management interface |
-| **AI Agent** | Python | - | Interactive storage management with LLM support |
-| **Notification Service** | Python | 5000 | Event notifications and webhooks |
-| **Outbox Worker** | Python | - | Background job processing |
+| **AI Agent** | Python | - | Event-driven automation and intelligence |
+
+### Data & Infrastructure
+
+| Component | Purpose |
+|-----------|---------|
+| **PostgreSQL** | Metadata storage (buckets, objects, policies) |
+| **Redis** | Event streaming and caching |
+| **File Storage** | Actual data files (can be S3, local, or other) |
+| **Notification Service** | Event notifications and webhooks |
+| **Outbox Worker** | Background job processing |
 
 ### Infrastructure
 
