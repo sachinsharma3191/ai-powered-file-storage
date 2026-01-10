@@ -65,9 +65,9 @@ describe('LifecyclePolicyComponent', () => {
 
   describe('Initialization', () => {
     it('should initialize with bucket name from route params', () => {
-      mockActivatedRoute.params.and.returnValue(of({
+      mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
-      }));
+      });
 
       mockStorageService.getLifecyclePolicy.and.returnValue(of(mockLifecyclePolicy));
 
@@ -77,9 +77,9 @@ describe('LifecyclePolicyComponent', () => {
     });
 
     it('should load policy on initialization', () => {
-      mockActivatedRoute.params.and.returnValue(of({
+      mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
-      }));
+      });
 
       mockStorageService.getLifecyclePolicy.and.returnValue(of(mockLifecyclePolicy));
 
@@ -90,9 +90,9 @@ describe('LifecyclePolicyComponent', () => {
     });
 
     it('should create empty policy when none exists', () => {
-      mockActivatedRoute.params.and.returnValue(of({
+      mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
-      }));
+      });
 
       mockStorageService.getLifecyclePolicy.and.returnValue(throwError('Policy not found'));
 
@@ -104,9 +104,9 @@ describe('LifecyclePolicyComponent', () => {
 
   describe('Policy Loading', () => {
     beforeEach(() => {
-      mockActivatedRoute.params.and.returnValue(of({
+      mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
-      }));
+      });
     });
 
     it('should handle successful policy load', () => {
@@ -305,9 +305,9 @@ describe('LifecyclePolicyComponent', () => {
 
   describe('Template Logic', () => {
     beforeEach(() => {
-      mockActivatedRoute.params.and.returnValue(of({
+      mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
-      }));
+      });
       mockStorageService.getLifecyclePolicy.and.returnValue(of(mockLifecyclePolicy));
       fixture.detectChanges();
     });
@@ -380,9 +380,9 @@ describe('LifecyclePolicyComponent', () => {
 
   describe('Error Scenarios', () => {
     beforeEach(() => {
-      mockActivatedRoute.params.and.returnValue(of({
+      mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
-      }));
+      });
     });
 
     it('should handle network error when loading policy', () => {

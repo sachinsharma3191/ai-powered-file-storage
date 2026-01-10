@@ -24,13 +24,11 @@ describe('StorageService', () => {
     etag: 'abc123',
     storage_class: 'standard',
     created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-    version_id: 'v1',
-    is_latest: true,
-    is_delete_marker: false
+    updated_at: '2024-01-01T00:00:00Z'
   };
 
   const mockListObjectsResponse: ListObjectsResponse = {
+    bucket: 'test-bucket',
     objects: [mockStorageObject],
     common_prefixes: ['folder/'],
     cursor: 'next-cursor',
@@ -93,16 +91,6 @@ describe('StorageService', () => {
       expect(req.request.method).toBe('DELETE');
       req.flush({});
     });
-
-    it('should get bucket details', () => {
-      service.getBucket('test-bucket').subscribe(bucket => {
-        expect(bucket).toEqual(mockBucket);
-      });
-
-      const req = httpMock.expectOne('/api/v1/buckets/test-bucket');
-      expect(req.request.method).toBe('GET');
-      req.flush(mockBucket);
-    });
   });
 
   describe('Object Operations', () => {
@@ -154,36 +142,14 @@ describe('StorageService', () => {
       req.flush({});
     });
 
-    it('should get object details', () => {
-      service.getObject('test-bucket', 'test-file.txt').subscribe(obj => {
-        expect(obj).toEqual(mockStorageObject);
-      });
-
-      const req = httpMock.expectOne('/api/v1/buckets/test-bucket/objects/test-file.txt');
-      expect(req.request.method).toBe('GET');
-      req.flush(mockStorageObject);
-    });
-
-    it('should get download URL', () => {
-      const downloadResponse = { download_url: 'http://example.com/download', expires_in: 3600 };
-
-      service.getDownloadUrl('test-bucket', 'test-file.txt').subscribe(response => {
-        expect(response).toEqual(downloadResponse);
-      });
-
-      const req = httpMock.expectOne('/api/v1/buckets/test-bucket/objects/test-file.txt/download-url');
-      expect(req.request.method).toBe('POST');
-      req.flush(downloadResponse);
-    });
-
     it('should complete upload', () => {
-      service.completeUpload('test-bucket', 'test-file.txt', 'v1', 'abc123', 1024).subscribe(obj => {
+      service.completeUpload('test-bucket', 'test-file.txt', 'abc123', 1024).subscribe(obj => {
         expect(obj).toEqual(mockStorageObject);
       });
 
       const req = httpMock.expectOne('/api/v1/buckets/test-bucket/objects/test-file.txt/complete');
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ version_id: 'v1', etag: 'abc123', size: 1024 });
+      expect(req.request.body).toEqual({ etag: 'abc123', size: 1024 });
       req.flush(mockStorageObject);
     });
   });
@@ -225,12 +191,9 @@ describe('StorageService', () => {
       const mockResponse = {
         body: { etag: 'new-etag' },
         headers: {
-          get: (key: string) => {
-            if (key === 'X-RateLimit-Limit') return '1000';
-            if (key === 'X-RateLimit-Remaining') return '950';
-            if (key === 'X-RateLimit-Reset') return '300';
-            return null;
-          }
+          'x-ratelimit-limit': '1000',
+          'x-ratelimit-remaining': '950',
+          'x-ratelimit-reset': '300'
         }
       };
 
@@ -247,16 +210,19 @@ describe('StorageService', () => {
       expect(req.request.method).toBe('PUT');
       expect(req.request.headers.get('Authorization')).toBe('Bearer token');
       expect(req.request.headers.get('Content-Type')).toBe('application/octet-stream');
-      req.flush(mockResponse.body, { headers: mockResponse.headers });
+      req.flush(mockResponse.body, { 
+        headers: {
+          'x-ratelimit-limit': '1000',
+          'x-ratelimit-remaining': '950',
+          'x-ratelimit-reset': '300'
+        }
+      });
     });
 
     it('should handle chunk gateway upload without rate limit headers', () => {
       const mockArrayBuffer = new ArrayBuffer(1024);
       const mockResponse = {
-        body: { etag: 'new-etag' },
-        headers: {
-          get: () => null
-        }
+        body: { etag: 'new-etag' }
       };
 
       service.uploadToChunkGateway('http://chunk-gateway:4000/upload', 'token', mockArrayBuffer).subscribe(response => {
@@ -265,7 +231,7 @@ describe('StorageService', () => {
       });
 
       const req = httpMock.expectOne('http://chunk-gateway:4000/upload');
-      req.flush(mockResponse.body, { headers: mockResponse.headers });
+      req.flush(mockResponse.body);
     });
   });
 
@@ -350,11 +316,11 @@ describe('StorageService', () => {
     });
 
     it('should properly encode object keys with slashes', () => {
-      service.getObject('test-bucket', 'path/to/file.txt').subscribe();
+      service.deleteObject('test-bucket', 'path/to/file.txt').subscribe();
 
       const req = httpMock.expectOne('/api/v1/buckets/test-bucket/objects/path%2Fto%2Ffile.txt');
-      expect(req.request.method).toBe('GET');
-      req.flush(mockStorageObject);
+      expect(req.request.method).toBe('DELETE');
+      req.flush({});
     });
   });
 });

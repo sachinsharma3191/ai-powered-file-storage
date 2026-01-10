@@ -214,7 +214,7 @@ describe('BucketsComponent', () => {
     });
 
     it('should delete bucket with confirmation', () => {
-      mockStorageService.deleteBucket.and.returnValue(of({}));
+      mockStorageService.deleteBucket.and.returnValue(of<void>(undefined));
       const bucket = mockBuckets[0];
 
       component.deleteBucket(bucket);
