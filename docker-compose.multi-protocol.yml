@@ -1,0 +1,187 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: s3_ai_storage
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and events
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ruby Storage Control Plane
+  storage-control-plane:
+    build:
+      context: ./services/storage-control-plane
+      dockerfile: Dockerfile
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_storage
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY_BASE: your-secret-key-base
+      SCOPED_JWT_SECRET: your-jwt-secret
+      CHUNK_GATEWAY_URL: http://chunk-gateway:4000
+      RUST_API_URL: http://rust-api:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/storage-control-plane:/app
+    command: bundle exec rails server -b 0.0.0.0 -p 3000
+
+  # Rust Chunk Gateway
+  chunk-gateway:
+    build:
+      context: ./services/chunk-gateway
+      dockerfile: Dockerfile
+    environment:
+      RUST_LOG: info
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_storage
+      REDIS_URL: redis://redis:6379/0
+      SCOPED_JWT_SECRET: your-jwt-secret
+      CHUNK_GATEWAY_REGION: us-east-1
+      BIND_ADDR: 0.0.0.0
+      PORT: 4000
+      STORAGE_PATH: /tmp/chunks
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - chunk_data:/tmp/chunks
+
+  # Rust API Service
+  rust-api:
+    build:
+      context: ./services/rust-api
+      dockerfile: Dockerfile
+    environment:
+      RUST_LOG: info
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_storage
+      REDIS_URL: redis://redis:6379/0
+      BIND_ADDR: 0.0.0.0
+      PORT: 5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Angular UI
+  storage-ui:
+    build:
+      context: ./services/storage-ui
+      dockerfile: Dockerfile
+    environment:
+      API_URL: http://localhost:3000
+      WS_URL: ws://localhost:3000/cable
+    ports:
+      - "4200:4200"
+    depends_on:
+      - storage-control-plane
+    volumes:
+      - ./services/storage-ui:/app
+      - /app/node_modules
+    command: npm start
+
+  # MCP Server for AI Integration
+  mcp-server:
+    build:
+      context: ./services/mcp-server
+      dockerfile: Dockerfile
+    environment:
+      STORAGE_API_URL: http://storage-control-plane:3000
+      STORAGE_API_KEY: your-api-key
+    ports:
+      - "8080:8080"
+    depends_on:
+      - storage-control-plane
+    volumes:
+      - ./services/mcp-server:/app
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - storage-control-plane
+      - storage-ui
+      - chunk-gateway
+
+  # Ollama for AI Models (Optional)
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+
+  # AI Agent
+  ai-agent:
+    build:
+      context: ./services/agent
+      dockerfile: Dockerfile
+    environment:
+      RUBY_API_URL: http://storage-control-plane:3000
+      RUST_API_URL: http://rust-api:5000
+      OLLAMA_URL: http://ollama:11434
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    depends_on:
+      - storage-control-plane
+      - rust-api
+      - ollama
+      - redis
+    volumes:
+      - ./services/agent:/app
+
+volumes:
+  postgres_data:
+  redis_data:
+  chunk_data:
+  ollama_data:
+
+networks:
+  default:
+    name: s3-ai-storage
+    driver: bridge

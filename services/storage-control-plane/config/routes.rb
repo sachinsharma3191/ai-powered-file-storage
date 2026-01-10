@@ -5,6 +5,28 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # S3 API Compatibility Layer
+  namespace :s3 do
+    # S3 Bucket Operations
+    get "/" => "s3#list_buckets"
+    
+    # S3 Object Operations
+    get ":bucket_name" => "s3#list_objects"
+    head ":bucket_name/:key" => "s3#head_object"
+    get ":bucket_name/:key" => "s3#get_object"
+    put ":bucket_name/:key" => "s3#put_object"
+    delete ":bucket_name/:key" => "s3#delete_object"
+    
+    # S3 Multipart Upload Operations
+    post ":bucket_name/:key" => "s3#initiate_multipart_upload", :uploads => ""
+    put ":bucket_name/:key" => "s3#upload_part", :part_number => /\d+/, :upload_id => /.+/
+    post ":bucket_name/:key" => "s3#complete_multipart_upload", :upload_id => /.+/
+    delete ":bucket_name/:key" => "s3#abort_multipart_upload", :upload_id => /.+/
+  end
+
+  # WebSocket routes for real-time events
+  mount ActionCable.server => '/cable'
+
   scope '/api' do
     namespace :v1 do
     post "bootstrap" => "bootstrap#create"
