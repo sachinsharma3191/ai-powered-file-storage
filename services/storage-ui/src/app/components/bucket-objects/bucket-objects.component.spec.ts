@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { BucketObjectsComponent } from './bucket-objects.component';
 import { StorageService, ListObjectsResponse, StorageObject, RateLimitInfo } from '../../services/storage.service';
 import { FileSecurityService, FileSecurityResult } from '../../services/file-security.service';
@@ -381,7 +381,7 @@ describe('BucketObjectsComponent', () => {
 
   describe('User Actions', () => {
     beforeEach(() => {
-      mockActivatedRoute.params.and.returnValue(of({
+      mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
       }));
     });
@@ -478,16 +478,14 @@ describe('BucketObjectsComponent', () => {
       };
 
       mockFileSecurityService.validateFile.and.returnValue(mockResult);
-      mockStorageService.createObject.and.returnValue(Promise.resolve());
+      mockStorageService.createObject.and.returnValue(of({}));
 
       component.onFilesSelected([validFile]);
 
       expect(component.uploadingFiles).toBe(true);
       expect(mockStorageService.createObject).toHaveBeenCalledWith(
         'test-bucket',
-        'test.jpg',
-        validFile.size,
-        validFile.type
+        'test.jpg'
       );
     });
 
@@ -515,7 +513,7 @@ describe('BucketObjectsComponent', () => {
       };
 
       mockFileSecurityService.validateFile.and.returnValue(mockResult);
-      mockStorageService.createObject.and.returnValue(Promise.reject('Upload failed'));
+      mockStorageService.createObject.and.returnValue(throwError('Upload failed'));
 
       component.onFilesSelected([validFile]);
 
@@ -535,22 +533,18 @@ describe('BucketObjectsComponent', () => {
       };
 
       mockFileSecurityService.validateFile.and.returnValue(mockResult);
-      mockStorageService.createObject.and.returnValue(Promise.resolve());
+      mockStorageService.createObject.and.returnValue(of({}));
 
       component.onFilesSelected([file1, file2]);
 
       expect(mockStorageService.createObject).toHaveBeenCalledTimes(2);
       expect(mockStorageService.createObject).toHaveBeenCalledWith(
         'test-bucket',
-        'test1.jpg',
-        file1.size,
-        file1.type
+        'test1.jpg'
       );
       expect(mockStorageService.createObject).toHaveBeenCalledWith(
         'test-bucket',
-        'test2.png',
-        file2.size,
-        file2.type
+        'test2.png'
       );
     });
 
@@ -566,15 +560,13 @@ describe('BucketObjectsComponent', () => {
       };
 
       mockFileSecurityService.validateFile.and.returnValue(mockResult);
-      mockStorageService.createObject.and.returnValue(Promise.resolve());
+      mockStorageService.createObject.and.returnValue(of({}));
 
       component.onFilesSelected([validFile]);
 
       expect(mockStorageService.createObject).toHaveBeenCalledWith(
         'test-bucket',
-        'folder/test.jpg',
-        validFile.size,
-        validFile.type
+        'folder/test.jpg'
       );
     });
   });

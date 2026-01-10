@@ -393,7 +393,7 @@ export class BucketObjectsComponent implements OnInit, OnDestroy {
     // Upload files to current path
     const uploadPromises = files.map(file => {
       const objectKey = this.currentPath ? `${this.currentPath}/${file.name}` : file.name;
-      return this.storageService.createObject(this.bucketName, objectKey, file.size, file.type);
+      return this.storageService.createObject(this.bucketName, objectKey);
     });
 
     Promise.all(uploadPromises).then(() => {

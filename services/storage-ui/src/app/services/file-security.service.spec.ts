@@ -83,7 +83,7 @@ describe('FileSecurityService', () => {
         const result = service.validateFile(file);
 
         expect(result.isValid).toBe(true);
-        expect(result.errors).toHaveLength(0);
+        expect(result.errors.length).toBe(0);
         expect(result.riskLevel).toBe(risk);
       });
     });
@@ -125,7 +125,7 @@ describe('FileSecurityService', () => {
       const result = service.validateFile(file);
 
       expect(result.isValid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.errors.length).toBe(0);
     });
   });
 
@@ -266,11 +266,11 @@ describe('FileSecurityService', () => {
       const rules = service.getSecurityRules();
       
       expect(rules.length).toBeGreaterThan(0);
-      expect(rules[0]).toHaveProperty('name');
-      expect(rules[0]).toHaveProperty('description');
-      expect(rules[0]).toHaveProperty('blocked');
-      expect(rules[0]).toHaveProperty('reason');
-      expect(rules[0]).toHaveProperty('riskLevel');
+      expect(rules[0].name).toBeDefined();
+      expect(rules[0].description).toBeDefined();
+      expect(rules[0].blocked).toBeDefined();
+      expect(rules[0].reason).toBeDefined();
+      expect(rules[0].riskLevel).toBeDefined();
     });
   });
 
@@ -338,11 +338,11 @@ describe('FileSecurityService', () => {
       const file = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
       const result = service.validateFile(file);
 
-      expect(result).toHaveProperty('isValid');
-      expect(result).toHaveProperty('errors');
-      expect(result).toHaveProperty('warnings');
-      expect(result).toHaveProperty('fileType');
-      expect(result).toHaveProperty('riskLevel');
+      expect(result.isValid).toBeDefined();
+      expect(Array.isArray(result.errors)).toBe(true);
+      expect(Array.isArray(result.warnings)).toBe(true);
+      expect(typeof result.fileType).toBe('string');
+      expect(typeof result.riskLevel).toBe('string');
       
       expect(Array.isArray(result.errors)).toBe(true);
       expect(Array.isArray(result.warnings)).toBe(true);

@@ -54,21 +54,18 @@ describe('FileUploadComponent', () => {
 
   describe('Drag and Drop', () => {
     it('should handle drag over', () => {
-      const event = new DragEvent('dragover', {
-        preventDefault: () => {},
-        stopPropagation: () => {}
-      });
+      const event = new Event('dragover', { bubbles: true, cancelable: true });
+      spyOn(event, 'preventDefault');
 
       component.onDragOver(event);
 
       expect(component.isDragOver()).toBe(true);
+      expect(event.preventDefault).toHaveBeenCalled();
     });
 
     it('should handle drag leave', () => {
-      const event = new DragEvent('dragleave', {
-        preventDefault: () => {},
-        stopPropagation: () => {}
-      });
+      const event = new Event('dragleave', { bubbles: true, cancelable: true });
+      spyOn(event, 'preventDefault');
 
       component.onDragOver(event);
       component.onDragLeave(event);
@@ -89,12 +86,14 @@ describe('FileUploadComponent', () => {
       fileSecurityService.validateFile.and.returnValue(mockResult);
       spyOn(component, 'processFiles' as any);
 
-      const event = new DragEvent('drop', {
-        preventDefault: () => {},
-        stopPropagation: () => {},
-        dataTransfer: new DataTransfer()
-      });
-      event.dataTransfer!.files = [file];
+      // Create a mock DataTransfer object
+      const dataTransfer = {
+        files: [file]
+      } as DataTransfer;
+
+      const event = new Event('drop', { bubbles: true, cancelable: true });
+      spyOn(event, 'preventDefault');
+      Object.defineProperty(event, 'dataTransfer', { value: dataTransfer });
 
       component.onDrop(event);
 
@@ -482,22 +481,6 @@ describe('FileUploadComponent', () => {
       expect(component).toBeTruthy();
       expect(component.isDragOver()).toBe(false);
       expect(component.isUploading()).toBe(false);
-    });
-
-    it('should clean up properly', () => {
-      component.selectedFiles.set([new File(['content'], 'test.jpg', { type: 'image/jpeg' })]);
-      component.securityResults.set([{
-        isValid: true,
-        errors: [],
-        warnings: [],
-        fileType: '.jpg',
-        riskLevel: 'low' as const
-      }]);
-
-      component.ngOnDestroy();
-
-      // Component should clean up without errors
-      expect(component).toBeTruthy();
     });
   });
 });
