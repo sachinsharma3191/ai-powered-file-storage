@@ -154,8 +154,8 @@ export class EnhancedChatService {
     const startTime = Date.now();
 
     // First create object record
-    return this.storageService.createObject(operation.bucket, operation.key).pipe(
-      switchMap(createResponse => {
+    return this.storageService.createObject(operation.bucket, operation.key, operation.file.size, operation.file.type).pipe(
+      switchMap((createResponse: any) => {
         if (createResponse.token) {
           // Upload to chunk gateway
           return this.storageService.uploadToChunkGateway(
@@ -195,9 +195,10 @@ export class EnhancedChatService {
   downloadFile(bucket: string, key: string): Observable<CommandResult> {
     const startTime = Date.now();
 
+    // Use the storage service to get download URL
     return this.storageService.getDownloadUrl(bucket, key).pipe(
-      map(response => {
-        if (response.url) {
+      map((response: any) => {
+        if (response && response.url) {
           // Trigger download
           const a = document.createElement('a');
           a.href = response.url;
@@ -255,8 +256,9 @@ export class EnhancedChatService {
     const startTime = Date.now();
 
     return this.storageService.listObjects(bucket).pipe(
-      map(objects => {
-        const file = objects.find(obj => obj.key === key);
+      map((response: any) => {
+        const objects = response.objects || [];
+        const file = objects.find((obj: any) => obj.key === key);
         if (file) {
           return {
             success: true,
@@ -288,10 +290,11 @@ export class EnhancedChatService {
     const startTime = Date.now();
 
     return this.storageService.listObjects(bucket).pipe(
-      map(objects => {
+      map((response: any) => {
+        const objects = response.objects || [];
         // Simple pattern matching (can be enhanced)
         const regex = new RegExp(pattern.replace('*', '.*'), 'i');
-        const matches = objects.filter(obj => regex.test(obj.key));
+        const matches = objects.filter((obj: any) => regex.test(obj.key));
         
         return {
           success: true,
@@ -316,9 +319,10 @@ export class EnhancedChatService {
 
     if (bucket) {
       return this.storageService.listObjects(bucket).pipe(
-        map(objects => {
-          const totalSize = objects.reduce((sum, obj) => sum + (obj.size || 0), 0);
-          const fileTypes = objects.reduce((types, obj) => {
+        map((response: any) => {
+          const objects = response.objects || [];
+          const totalSize = objects.reduce((sum: number, obj: any) => sum + (obj.size || 0), 0);
+          const fileTypes = objects.reduce((types: Record<string, number>, obj: any) => {
             const ext = obj.key.split('.').pop()?.toLowerCase() || 'unknown';
             types[ext] = (types[ext] || 0) + 1;
             return types;
@@ -347,13 +351,13 @@ export class EnhancedChatService {
     } else {
       // Get stats for all buckets
       return this.storageService.listBuckets().pipe(
-        switchMap(buckets => {
+        switchMap((buckets: any[]) => {
           const statsPromises = buckets.map(bucket => 
             this.storageService.listObjects(bucket.name).pipe(
-              map(objects => ({
+              map((response: any) => ({
                 bucket: bucket.name,
-                fileCount: objects.length,
-                totalSize: objects.reduce((sum, obj) => sum + (obj.size || 0), 0)
+                fileCount: (response.objects || []).length,
+                totalSize: (response.objects || []).reduce((sum: number, obj: any) => sum + (obj.size || 0), 0)
               }))
             )
           );

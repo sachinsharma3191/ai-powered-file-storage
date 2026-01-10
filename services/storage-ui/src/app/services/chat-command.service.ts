@@ -217,26 +217,26 @@ export class ChatCommandService {
           
           // Extract parameters based on the intent
           if (intent === 'createBucket') {
-            parameters.name = match[1];
-            parameters.region = 'us-east-1'; // Default region
+            parameters['name'] = match[1];
+            parameters['region'] = 'us-east-1'; // Default region
           } else if (intent === 'deleteBucket') {
-            parameters.name = match[1];
+            parameters['name'] = match[1];
           } else if (intent === 'listObjects') {
-            parameters.bucket = match[1];
-            parameters.prefix = '';
+            parameters['bucket'] = match[1];
+            parameters['prefix'] = '';
           } else if (intent === 'uploadFile') {
-            parameters.filename = match[1];
-            parameters.bucket = match[2];
-            parameters.path = '';
+            parameters['filename'] = match[1];
+            parameters['bucket'] = match[2];
+            parameters['path'] = '';
           } else if (intent === 'downloadFile' || intent === 'deleteFile') {
-            parameters.filename = match[1];
-            parameters.bucket = match[2];
+            parameters['filename'] = match[1];
+            parameters['bucket'] = match[2];
           } else if (intent === 'searchFiles') {
-            parameters.pattern = match[1];
-            parameters.bucket = match[2];
+            parameters['pattern'] = match[1];
+            parameters['bucket'] = match[2];
           } else if (intent === 'getFileInfo' || intent === 'getDownloadUrl') {
-            parameters.filename = match[1];
-            parameters.bucket = match[2];
+            parameters['filename'] = match[1];
+            parameters['bucket'] = match[2];
           }
 
           return {
@@ -324,15 +324,35 @@ export class ChatCommandService {
 
   private executeCreateBucket(params: any, protocol: string): Observable<CommandResult> {
     if (protocol === 'mcp') {
-      return this.mcpService.createBucket(params.name, params.region).pipe(
-        map(() => ({ success: true, message: `✅ Bucket "${params.name}" created successfully` })),
-        catchError(error => of({ success: false, message: `❌ Failed to create bucket: ${error.message}` }))
+      return this.mcpService.createBucket(params['name'], params['region']).pipe(
+        map(() => ({ 
+          success: true, 
+          message: `✅ Bucket "${params['name']}" created successfully`,
+          executedBy: protocol,
+          executionTime: 0
+        })),
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to create bucket: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     } else {
       // Use REST API
-      return this.storageService.createBucket(params.name, params.region).pipe(
-        map(() => ({ success: true, message: `✅ Bucket "${params.name}" created successfully` })),
-        catchError(error => of({ success: false, message: `❌ Failed to create bucket: ${error.message}` }))
+      return this.storageService.createBucket(params['name'], params['region']).pipe(
+        map(() => ({ 
+          success: true, 
+          message: `✅ Bucket "${params['name']}" created successfully`,
+          executedBy: protocol,
+          executionTime: 0
+        })),
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to create bucket: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     }
   }
@@ -343,54 +363,102 @@ export class ChatCommandService {
         map(buckets => ({ 
           success: true, 
           message: `📦 Found ${buckets.length} buckets: ${buckets.join(', ')}`,
-          data: buckets 
+          data: buckets,
+          executedBy: protocol,
+          executionTime: 0
         })),
-        catchError(error => of({ success: false, message: `❌ Failed to list buckets: ${error.message}` }))
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to list buckets: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     } else {
       return this.storageService.listBuckets().pipe(
         map(buckets => ({ 
           success: true, 
-          message: `📦 Found ${buckets.length} buckets: ${buckets.map(b => b.name).join(', ')}`,
-          data: buckets 
+          message: `📦 Found ${buckets.length} buckets: ${buckets.map((b: any) => b.name).join(', ')}`,
+          data: buckets,
+          executedBy: protocol,
+          executionTime: 0
         })),
-        catchError(error => of({ success: false, message: `❌ Failed to list buckets: ${error.message}` }))
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to list buckets: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     }
   }
 
   private executeDeleteBucket(params: any, protocol: string): Observable<CommandResult> {
     if (protocol === 'mcp') {
-      return this.mcpService.deleteBucket(params.name).pipe(
-        map(() => ({ success: true, message: `🗑️ Bucket "${params.name}" deleted successfully` })),
-        catchError(error => of({ success: false, message: `❌ Failed to delete bucket: ${error.message}` }))
+      return this.mcpService.deleteBucket(params['name']).pipe(
+        map(() => ({ 
+          success: true, 
+          message: `🗑️ Bucket "${params['name']}" deleted successfully`,
+          executedBy: protocol,
+          executionTime: 0
+        })),
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to delete bucket: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     } else {
-      return this.storageService.deleteBucket(params.name).pipe(
-        map(() => ({ success: true, message: `🗑️ Bucket "${params.name}" deleted successfully` })),
-        catchError(error => of({ success: false, message: `❌ Failed to delete bucket: ${error.message}` }))
+      return this.storageService.deleteBucket(params['name']).pipe(
+        map(() => ({ 
+          success: true, 
+          message: `🗑️ Bucket "${params['name']}" deleted successfully`,
+          executedBy: protocol,
+          executionTime: 0
+        })),
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to delete bucket: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     }
   }
 
   private executeListObjects(params: any, protocol: string): Observable<CommandResult> {
     if (protocol === 'mcp') {
-      return this.mcpService.listObjects(params.bucket, params.prefix).pipe(
+      return this.mcpService.listObjects(params['bucket'], params['prefix']).pipe(
         map(objects => ({ 
           success: true, 
-          message: `📄 Found ${objects.length} objects in bucket "${params.bucket}"`,
-          data: objects 
+          message: `📄 Found ${objects.length} objects in bucket "${params['bucket']}"`,
+          data: objects,
+          executedBy: protocol,
+          executionTime: 0
         })),
-        catchError(error => of({ success: false, message: `❌ Failed to list objects: ${error.message}` }))
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to list objects: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     } else {
-      return this.storageService.listObjects(params.bucket).pipe(
-        map(objects => ({ 
+      return this.storageService.listObjects(params['bucket']).pipe(
+        map((response: any) => ({ 
           success: true, 
-          message: `📄 Found ${objects.length} objects in bucket "${params.bucket}"`,
-          data: objects 
+          message: `📄 Found ${response.objects?.length || 0} objects in bucket "${params['bucket']}"`,
+          data: response.objects || [],
+          executedBy: protocol,
+          executionTime: 0
         })),
-        catchError(error => of({ success: false, message: `❌ Failed to list objects: ${error.message}` }))
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to list objects: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     }
   }
@@ -399,73 +467,125 @@ export class ChatCommandService {
     // For file uploads, we need to prompt for the actual file
     return of({
       success: false,
-      message: `📎 To upload "${params.filename}" to bucket "${params.bucket}", please use the file upload interface above. Chat uploads are not yet supported.`,
-      data: { requiresFileUpload: true, filename: params.filename, bucket: params.bucket }
+      message: `📎 To upload "${params['filename']}" to bucket "${params['bucket']}", please use the file upload interface above. Chat uploads are not yet supported.`,
+      data: { requiresFileUpload: true, filename: params['filename'], bucket: params['bucket'] },
+      executedBy: protocol,
+      executionTime: 0
     });
   }
 
   private executeDownloadFile(params: any, protocol: string): Observable<CommandResult> {
     if (protocol === 'mcp') {
-      return this.mcpService.getDownloadUrl(params.bucket, params.filename).pipe(
+      return this.mcpService.getDownloadUrl(params['bucket'], params['filename']).pipe(
         map(url => ({ 
           success: true, 
-          message: `⬇️ Download URL for "${params.filename}": ${url}`,
-          data: { url }
+          message: `⬇️ Download URL for "${params['filename']}": ${url}`,
+          data: { url },
+          executedBy: protocol,
+          executionTime: 0
         })),
-        catchError(error => of({ success: false, message: `❌ Failed to get download URL: ${error.message}` }))
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to get download URL: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     } else {
       return of({
         success: false,
-        message: `⬇️ Please use the S3 browser or file interface to download "${params.filename}" from bucket "${params.bucket}"`
+        message: `⬇️ Please use the S3 browser or file interface to download "${params['filename']}" from bucket "${params['bucket']}"`,
+        executedBy: protocol,
+        executionTime: 0
       });
     }
   }
 
   private executeDeleteFile(params: any, protocol: string): Observable<CommandResult> {
     if (protocol === 'mcp') {
-      return this.mcpService.deleteObject(params.bucket, params.filename).pipe(
-        map(() => ({ success: true, message: `🗑️ File "${params.filename}" deleted successfully` })),
-        catchError(error => of({ success: false, message: `❌ Failed to delete file: ${error.message}` }))
+      return this.mcpService.deleteObject(params['bucket'], params['filename']).pipe(
+        map(() => ({ 
+          success: true, 
+          message: `🗑️ File "${params['filename']}" deleted successfully`,
+          executedBy: protocol,
+          executionTime: 0
+        })),
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to delete file: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     } else {
-      return this.storageService.deleteObject(params.bucket, params.filename).pipe(
-        map(() => ({ success: true, message: `🗑️ File "${params.filename}" deleted successfully` })),
-        catchError(error => of({ success: false, message: `❌ Failed to delete file: ${error.message}` }))
+      return this.storageService.deleteObject(params['bucket'], params['filename']).pipe(
+        map(() => ({ 
+          success: true, 
+          message: `🗑️ File "${params['filename']}" deleted successfully`,
+          executedBy: protocol,
+          executionTime: 0
+        })),
+        catchError(error => of({ 
+          success: false, 
+          message: `❌ Failed to delete file: ${error.message}`,
+          executedBy: protocol,
+          executionTime: 0
+        }))
       );
     }
   }
 
   private executeSearchFiles(params: any, protocol: string): Observable<CommandResult> {
-    return this.mcpService.searchObjects(params.bucket, params.pattern).pipe(
+    return this.mcpService.searchObjects(params['bucket'], params['pattern']).pipe(
       map(objects => ({ 
         success: true, 
-        message: `🔍 Found ${objects.length} files matching "${params.pattern}" in bucket "${params.bucket}"`,
-        data: objects 
+        message: `🔍 Found ${objects.length} files matching "${params['pattern']}" in bucket "${params['bucket']}"`,
+        data: objects,
+        executedBy: protocol,
+        executionTime: 0
       })),
-      catchError(error => of({ success: false, message: `❌ Failed to search files: ${error.message}` }))
+      catchError(error => of({ 
+        success: false, 
+        message: `❌ Failed to search files: ${error.message}`,
+        executedBy: protocol,
+        executionTime: 0
+      }))
     );
   }
 
   private executeGetFileInfo(params: any, protocol: string): Observable<CommandResult> {
-    return this.mcpService.getObjectInfo(params.bucket, params.filename).pipe(
+    return this.mcpService.getObjectInfo(params['bucket'], params['filename']).pipe(
       map(info => ({ 
         success: true, 
-        message: `ℹ️ File information for "${params.filename}":`,
-        data: info 
+        message: `ℹ️ File information for "${params['filename']}":`,
+        data: info,
+        executedBy: protocol,
+        executionTime: 0
       })),
-      catchError(error => of({ success: false, message: `❌ Failed to get file info: ${error.message}` }))
+      catchError(error => of({ 
+        success: false, 
+        message: `❌ Failed to get file info: ${error.message}`,
+        executedBy: protocol,
+        executionTime: 0
+      }))
     );
   }
 
   private executeGetDownloadUrl(params: any, protocol: string): Observable<CommandResult> {
-    return this.mcpService.getDownloadUrl(params.bucket, params.filename).pipe(
+    return this.mcpService.getDownloadUrl(params['bucket'], params['filename']).pipe(
       map(url => ({ 
         success: true, 
-        message: `🔗 Download URL for "${params.filename}": ${url}`,
-        data: { url }
+        message: `🔗 Download URL for "${params['filename']}": ${url}`,
+        data: { url },
+        executedBy: protocol,
+        executionTime: 0
       })),
-      catchError(error => of({ success: false, message: `❌ Failed to get download URL: ${error.message}` }))
+      catchError(error => of({ 
+        success: false, 
+        message: `❌ Failed to get download URL: ${error.message}`,
+        executedBy: protocol,
+        executionTime: 0
+      }))
     );
   }
 
