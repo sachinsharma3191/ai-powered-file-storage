@@ -9,6 +9,10 @@ from core.decision_engine import DecisionEngine, LLMDecisionEngine, DEFAULT_RULE
 from core.notification_dispatcher import NotificationDispatcher, NotificationConfig
 from core.action_executor import ActionExecutor, ActionConfig
 from core.event_consumer import QueueConfig, QueueType
+from models.events import (
+    ObjectEvent, BucketEvent, SecurityEvent, MetricEvent,
+    EventType, EventSource, EventSeverity
+)
 
 
 @pytest.fixture(scope="session")
