@@ -1,0 +1,169 @@
+# Add your own tasks in files placed in lib/tasks ending in .rake,
+# for example lib/tasks/capistrano.rake, and they will automatically be available to Rake.
+
+require_relative "config/application"
+
+Rails.application.load_tasks
+
+# Custom test tasks for pre-build validation
+namespace :test do
+  desc "Run quick validation tests before Docker build"
+  task :quick do
+    puts "🚀 Running quick pre-build tests..."
+    
+    # Test critical functionality
+    test_files = [
+      "test/models/api_key_test.rb",
+      "test/models/account_test.rb", 
+      "test/controllers/v1/account_controller_test.rb",
+      "test/controllers/v1/buckets_controller_test.rb",
+      "test/controllers/v1/objects_controller_test.rb"
+    ]
+    
+    test_files.each do |file|
+      if File.exist?(file)
+        puts "🔍 Testing #{file}..."
+        system("rails test #{file}")
+        raise "❌ Test failed: #{file}" unless $?.success?
+      else
+        puts "⚠️  Skipping missing file: #{file}"
+      end
+    end
+    
+    puts "✅ All quick tests passed!"
+  end
+
+  desc "Run API key functionality tests"
+  task :api_keys do
+    puts "🔑 Testing API key functionality..."
+    system("rails test test/models/api_key_test.rb test/controllers/v1/account_controller_test.rb")
+    raise "❌ API key tests failed!" unless $?.success?
+    puts "✅ API key tests passed!"
+  end
+
+  desc "Run plan limits tests"
+  task :plan_limits do
+    puts "💰 Testing plan limits..."
+    system("rails test test/models/account_test.rb")
+    raise "❌ Plan limits tests failed!" unless $?.success?
+    puts "✅ Plan limits tests passed!"
+  end
+
+  desc "Run all controller tests"
+  task :controllers do
+    puts "🎮 Testing all controllers..."
+    system("rails test test/controllers/**/*_test.rb")
+    raise "❌ Controller tests failed!" unless $?.success?
+    puts "✅ Controller tests passed!"
+  end
+
+  desc "Run all model tests"
+  task :models do
+    puts "🏗️  Testing all models..."
+    system("rails test test/models/**/*_test.rb")
+    raise "❌ Model tests failed!" unless $?.success?
+    puts "✅ Model tests passed!"
+  end
+end
+
+# Enhanced default task
+desc "Run all tests with validation"
+task default: :test do
+  Rake::Task["test:quick"].invoke
+end
+
+# Docker pre-build validation task
+desc "Complete validation before Docker build"
+task :docker_validate => [
+  "test:models",
+  "test:controllers", 
+  "test:api_keys",
+  "test:plan_limits"
+] do
+  puts "🎉 All Docker validation tests passed!"
+  puts "🐳 Ready to build Docker image!"
+end
+
+# Coverage tasks
+namespace :coverage do
+  desc "Run tests with 100% coverage requirement"
+  task :run do
+    ENV['COVERAGE_MINIMUM'] = '100.0'
+    puts "📊 Running tests with 100% coverage requirement..."
+    
+    # Ensure coverage directory exists
+    FileUtils.mkdir_p('coverage')
+    FileUtils.mkdir_p('test-results')
+    
+    # Run all tests with coverage
+    system("rails test")
+    
+    if $?.success?
+      puts "✅ All tests passed with required coverage!"
+    else
+      puts "❌ Tests failed or coverage below 100%"
+      exit 1
+    end
+  end
+  
+  desc "Generate coverage report"
+  task :report do
+    puts "📈 Generating coverage report..."
+    
+    if File.exist?('coverage/coverage.json')
+      coverage_data = JSON.parse(File.read('coverage/coverage.json'))
+      total_coverage = coverage_data['RSpec']['coverage'].to_f
+      
+      puts "📊 Total Coverage: #{total_coverage.round(2)}%"
+      
+      if total_coverage >= 100.0
+        puts "✅ Meets 100% coverage requirement!"
+      else
+        puts "❌ Below 100% coverage requirement!"
+        exit 1
+      end
+    else
+      puts "⚠️  No coverage report found. Run 'rake coverage:run' first."
+    end
+  end
+  
+  desc "Check coverage percentage"
+  task :check do
+    puts "🔍 Checking current coverage..."
+    
+    minimum = ENV.fetch('COVERAGE_MINIMUM', '100.0').to_f
+    
+    if File.exist?('coverage/.last_run.json')
+      last_run = JSON.parse(File.read('coverage/.last_run.json'))
+      coverage = last_run['RSpec']['coverage'].to_f
+      
+      puts "📊 Current Coverage: #{coverage.round(2)}%"
+      puts "🎯 Required Coverage: #{minimum}%"
+      
+      if coverage >= minimum
+        puts "✅ Coverage requirement met!"
+      else
+        puts "❌ Coverage requirement NOT met!"
+        puts "   Missing: #{(minimum - coverage).round(2)}%"
+        exit 1
+      end
+    else
+      puts "⚠️  No coverage data found. Run tests first."
+      exit 1
+    end
+  end
+end
+
+# Enhanced test task with coverage
+desc "Run tests with coverage validation"
+task test: "coverage:run"
+
+# Docker build validation with coverage
+desc "Complete validation including coverage before Docker build"
+task :docker_build_validate => [
+  "coverage:run",
+  "docker_validate"
+] do
+  puts "🎉 All tests passed with 100% coverage!"
+  puts "🐳 Ready for Docker build!"
+end
