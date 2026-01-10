@@ -3,10 +3,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { StorageService, ListObjectsResponse, StorageObject, RateLimitInfo } from '../../services/storage.service';
+import { FileSecurityService, FileSecurityResult } from '../../services/file-security.service';
+import { CommonModule } from '@angular/common';
+import { FileUploadComponent } from '../file-upload/file-upload.component';
 
 @Component({
   selector: 'app-bucket-objects',
   standalone: true,
+  imports: [CommonModule, FileUploadComponent],
   template: `
     <div class="bucket-objects">
       <!-- Breadcrumb Navigation -->
@@ -166,6 +170,36 @@ import { StorageService, ListObjectsResponse, StorageObject, RateLimitInfo } fro
           Load More
         </button>
       </div>
+
+      <!-- File Upload Modal -->
+      <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" *ngIf="showFileUpload">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">🔒 Secure File Upload</h5>
+              <button type="button" class="btn-close" (click)="showFileUpload = false"></button>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-info">
+                <strong>🛡️ Security Notice:</strong> All files are scanned for security threats. 
+                Dangerous files are automatically blocked to protect the system.
+              </div>
+              
+              <app-file-upload 
+                [multiple]="true"
+                [maxFiles]="10"
+                (filesSelected)="onFilesSelected($event)"
+                (uploadComplete)="onUploadComplete($event)">
+              </app-file-upload>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showFileUpload = false">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -216,11 +250,16 @@ export class BucketObjectsComponent implements OnInit, OnDestroy {
   
   searchTerm: string = '';
   rateLimitInfo?: RateLimitInfo;
+  
+  // File upload properties
+  showFileUpload: boolean = false;
+  uploadingFiles: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private fileSecurityService: FileSecurityService
   ) {}
 
   ngOnInit(): void {
@@ -340,8 +379,39 @@ export class BucketObjectsComponent implements OnInit, OnDestroy {
   }
 
   uploadFile(): void {
-    // TODO: Implement file upload
-    console.log('Upload file to:', this.currentPath);
+    this.showFileUpload = true;
+  }
+
+  onFilesSelected(files: File[]): void {
+    if (files.length === 0) {
+      this.showFileUpload = false;
+      return;
+    }
+
+    this.uploadingFiles = true;
+    
+    // Upload files to current path
+    const uploadPromises = files.map(file => {
+      const objectKey = this.currentPath ? `${this.currentPath}/${file.name}` : file.name;
+      return this.storageService.createObject(this.bucketName, objectKey, file.size, file.type);
+    });
+
+    Promise.all(uploadPromises).then(() => {
+      // Refresh the object list after successful upload
+      this.refresh();
+      this.showFileUpload = false;
+      this.uploadingFiles = false;
+    }).catch(error => {
+      console.error('Upload failed:', error);
+      this.uploadingFiles = false;
+    });
+  }
+
+  onUploadComplete(result: { success: File[], failed: File[] }): void {
+    console.log('Upload completed:', result);
+    if (result.failed.length > 0) {
+      console.warn('Failed to upload:', result.failed);
+    }
   }
 
   selectObject(object: StorageObject): void {

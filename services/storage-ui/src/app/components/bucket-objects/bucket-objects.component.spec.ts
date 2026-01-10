@@ -1,13 +1,17 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, Subject, throwError } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { BucketObjectsComponent } from './bucket-objects.component';
 import { StorageService, ListObjectsResponse, StorageObject, RateLimitInfo } from '../../services/storage.service';
+import { FileSecurityService, FileSecurityResult } from '../../services/file-security.service';
+import { FileUploadComponent } from '../file-upload/file-upload.component';
+import { CommonModule } from '@angular/common';
 
 describe('BucketObjectsComponent', () => {
   let component: BucketObjectsComponent;
   let fixture: ComponentFixture<BucketObjectsComponent>;
   let mockStorageService: jasmine.SpyObj<StorageService>;
+  let mockFileSecurityService: jasmine.SpyObj<FileSecurityService>;
   let mockActivatedRoute: jasmine.SpyObj<ActivatedRoute>;
   let mockRouter: jasmine.SpyObj<Router>;
   let destroySubject: Subject<void>;
@@ -40,22 +44,25 @@ describe('BucketObjectsComponent', () => {
   beforeEach(async () => {
     destroySubject = new Subject<void>();
     
-    const storageSpy = jasmine.createSpyObj('StorageService', ['listObjects']);
+    const storageSpy = jasmine.createSpyObj('StorageService', ['listObjects', 'createObject']);
     const routeSpy = jasmine.createSpyObj('ActivatedRoute', ['params']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const fileSecuritySpy = jasmine.createSpyObj('FileSecurityService', ['validateFile', 'getAllowedExtensions', 'getMaxFileSize', 'getSecurityRules']);
 
     await TestBed.configureTestingModule({
       declarations: [BucketObjectsComponent],
       providers: [
         { provide: StorageService, useValue: storageSpy },
         { provide: ActivatedRoute, useValue: routeSpy },
-        { provide: Router, useValue: routerSpy }
+        { provide: Router, useValue: routerSpy },
+        { provide: FileSecurityService, useValue: fileSecuritySpy }
       ]
     }).compileComponents();
 
     mockStorageService = TestBed.inject(StorageService) as jasmine.SpyObj<StorageService>;
     mockActivatedRoute = TestBed.inject(ActivatedRoute) as jasmine.SpyObj<ActivatedRoute>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    mockFileSecurityService = TestBed.inject(FileSecurityService) as jasmine.SpyObj<FileSecurityService>;
 
     fixture = TestBed.createComponent(BucketObjectsComponent);
     component = fixture.componentInstance;
@@ -437,6 +444,138 @@ describe('BucketObjectsComponent', () => {
       
       expect(destroySubject.next).toHaveBeenCalled();
       expect(destroySubject.complete).toHaveBeenCalled();
+    });
+  });
+
+  describe('File Upload Security', () => {
+    beforeEach(() => {
+      mockFileSecurityService.getAllowedExtensions.and.returnValue(['.jpg', '.png', '.pdf']);
+      mockFileSecurityService.getMaxFileSize.and.returnValue(10 * 1024 * 1024);
+      mockFileSecurityService.getSecurityRules.and.returnValue([]);
+    });
+
+    it('should show file upload modal when upload button clicked', () => {
+      component.uploadFile();
+
+      expect(component.showFileUpload).toBe(true);
+    });
+
+    it('should hide file upload modal when no files selected', () => {
+      component.showFileUpload = true;
+      component.onFilesSelected([]);
+
+      expect(component.showFileUpload).toBe(false);
+    });
+
+    it('should handle valid file selection', () => {
+      const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
+      const mockResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        fileType: '.jpg',
+        riskLevel: 'low' as const
+      };
+
+      mockFileSecurityService.validateFile.and.returnValue(mockResult);
+      mockStorageService.createObject.and.returnValue(Promise.resolve());
+
+      component.onFilesSelected([validFile]);
+
+      expect(component.uploadingFiles).toBe(true);
+      expect(mockStorageService.createObject).toHaveBeenCalledWith(
+        'test-bucket',
+        'test.jpg',
+        validFile.size,
+        validFile.type
+      );
+    });
+
+    it('should handle file upload completion', () => {
+      spyOn(component, 'refresh');
+      const result = {
+        success: [new File(['content'], 'test.jpg', { type: 'image/jpeg' })],
+        failed: []
+      };
+
+      component.onUploadComplete(result);
+
+      expect(component.uploadingFiles).toBe(false);
+    });
+
+    it('should handle file upload failures', () => {
+      spyOn(console, 'error');
+      const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
+      const mockResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        fileType: '.jpg',
+        riskLevel: 'low' as const
+      };
+
+      mockFileSecurityService.validateFile.and.returnValue(mockResult);
+      mockStorageService.createObject.and.returnValue(Promise.reject('Upload failed'));
+
+      component.onFilesSelected([validFile]);
+
+      expect(console.error).toHaveBeenCalledWith('Upload failed:', 'Upload failed');
+      expect(component.uploadingFiles).toBe(false);
+    });
+
+    it('should handle multiple file uploads', () => {
+      const file1 = new File(['content1'], 'test1.jpg', { type: 'image/jpeg' });
+      const file2 = new File(['content2'], 'test2.png', { type: 'image/png' });
+      const mockResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        fileType: '.jpg',
+        riskLevel: 'low' as const
+      };
+
+      mockFileSecurityService.validateFile.and.returnValue(mockResult);
+      mockStorageService.createObject.and.returnValue(Promise.resolve());
+
+      component.onFilesSelected([file1, file2]);
+
+      expect(mockStorageService.createObject).toHaveBeenCalledTimes(2);
+      expect(mockStorageService.createObject).toHaveBeenCalledWith(
+        'test-bucket',
+        'test1.jpg',
+        file1.size,
+        file1.type
+      );
+      expect(mockStorageService.createObject).toHaveBeenCalledWith(
+        'test-bucket',
+        'test2.png',
+        file2.size,
+        file2.type
+      );
+    });
+
+    it('should handle file uploads with current path', () => {
+      component.currentPath = 'folder';
+      const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
+      const mockResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        fileType: '.jpg',
+        riskLevel: 'low' as const
+      };
+
+      mockFileSecurityService.validateFile.and.returnValue(mockResult);
+      mockStorageService.createObject.and.returnValue(Promise.resolve());
+
+      component.onFilesSelected([validFile]);
+
+      expect(mockStorageService.createObject).toHaveBeenCalledWith(
+        'test-bucket',
+        'folder/test.jpg',
+        validFile.size,
+        validFile.type
+      );
     });
   });
 });
