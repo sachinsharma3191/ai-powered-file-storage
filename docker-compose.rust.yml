@@ -122,24 +122,60 @@ services:
         condition: service_started
     command: python worker.py
 
-  # AI Agent (Python)
+  # Python Agent (Event-driven automation and notifications)
   ai-agent:
     build:
       context: ./services/agent
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8080:8080"  # Metrics port
     environment:
-      STORAGE_API_URL: http://storage-control-plane:3000/api/v1
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+      # Queue configuration
+      QUEUE_TYPE: redis_streams
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CONSUMER_GROUP: s3-ai-agent
+      QUEUE_TOPICS: storage-events
+      
+      # API connections
+      RUBY_API_URL: http://storage-control-plane:3000
+      RUST_API_URL: http://chunk-gateway:4000
+      API_KEY: test-api-key
+      
+      # LLM configuration (optional)
+      LLM_ENABLED: "false"
+      OPENAI_API_KEY: 
+      ANTHROPIC_API_KEY: 
+      
+      # Notification configuration
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: 
+      SMTP_PASSWORD: 
+      FROM_ADDRESS: noreply@s3-ai-mcp.com
+      SLACK_BOT_TOKEN: 
+      
+      # Logging and monitoring
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      METRICS_PORT: 8080
+      SENTRY_DSN: 
     volumes:
       - ./services/agent:/app
+      - ./services/agent/templates:/app/templates
     depends_on:
-      postgres:
+      redis:
         condition: service_healthy
       storage-control-plane:
         condition: service_healthy
-    command: python server.py
+      chunk-gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Nginx Load Balancer
   nginx:

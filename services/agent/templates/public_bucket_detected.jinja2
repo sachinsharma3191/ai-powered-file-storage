@@ -1,0 +1,33 @@
+🚨 SECURITY ALERT: Public Bucket Detected
+
+A public bucket has been detected in your S3-compatible storage account.
+
+Event Details:
+• Account ID: {{ event.account_id }}
+• Bucket Name: {{ event.bucket_name }}
+• Detection Time: {{ timestamp }}
+• Risk Level: HIGH
+
+Security Implications:
+{{ notification.metadata.security_implications }}
+
+Recommended Actions:
+1. Review bucket policy immediately
+2. Remove public access if not intended
+3. Enable bucket access logging
+4. Review recent access logs
+
+Current Bucket Policy:
+{% if event.bucket_policy %}
+{{ event.bucket_policy | tojson(indent=2) }}
+{% else %}
+No bucket policy found
+{% endif %}
+
+Next Steps:
+- Access the Ruby control plane to modify bucket settings
+- Review security documentation for proper configuration
+- Consider enabling additional security monitoring
+
+This is an automated security alert from the S3 AI MCP Agent.
+If you believe this is a false positive, please contact your security team.

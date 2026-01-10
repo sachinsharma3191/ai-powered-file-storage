@@ -1,0 +1,45 @@
+📈 PERFORMANCE ALERT: Download Spike Detected
+
+An unusual spike in download activity has been detected for your storage account.
+
+Event Details:
+• Account ID: {{ event.account_id }}
+• Bucket Name: {{ event.bucket_name }}
+• Object Key: {{ event.object_key }}
+• Download Count: {{ event.metric_value }}
+• Detection Time: {{ timestamp }}
+• Risk Level: MEDIUM
+
+Operational Impact:
+{{ notification.metadata.operational_impact }}
+
+Analysis:
+• Current downloads: {{ event.metric_value }} requests
+• Threshold exceeded: {{ event.threshold }} requests
+• Time window: Last 60 minutes
+
+Potential Causes:
+- Legitimate high-traffic event (marketing campaign, etc.)
+- Data scraping or unauthorized access
+- Application malfunction or infinite loop
+- DDoS attack
+
+Recommended Actions:
+1. Verify if this traffic is expected
+2. Check application logs for unusual patterns
+3. Monitor bandwidth costs
+4. Consider implementing rate limiting
+5. Review access logs for suspicious activity
+
+Auto-Actions Taken:
+✅ API key throttling has been applied
+✅ Security team has been notified
+
+Next Steps:
+- Monitor the situation through the control panel
+- Adjust throttling limits if needed
+- Investigate source IP addresses
+- Consider upgrading bandwidth plan if legitimate traffic
+
+This is an automated performance alert from the S3 AI MCP Agent.
+To adjust alert thresholds, modify your monitoring configuration.

@@ -1,123 +1,196 @@
-# File Storage Agent
+# S3 AI MCP Agent - Event-driven Automation & Notifications
 
-An offline-capable agent for interacting with the File Storage platform.
-**No external LLM API keys required** - works with local Ollama or pure command parsing.
+A sophisticated Python agent that provides intelligent automation and notification capabilities for the S3 AI MCP storage system. The agent connects to both Ruby control plane and Rust data plane, processing events through rules and LLM-powered decision making.
 
-## Features
+## 🎯 Core Features
 
-- **CLI Tool** (`cli.py`) - Direct command-line interface
-- **Interactive Agent** (`agent.py`) - Natural language interface with optional Ollama LLM
-- **Storage Client** (`storage_client.py`) - Python library for programmatic access
+### Event-Driven Architecture
+- **Queue Support**: Redis Streams, Kafka, RabbitMQ
+- **Event Types**: Object operations, security events, performance metrics
+- **Scalable Processing**: Concurrent event handling with configurable batch sizes
+- **Dead Letter Queue**: Failed event handling and retry mechanisms
 
-## Quick Start
+### Intelligent Decision Engine
+- **Rules-First Processing**: Fast, deterministic rule evaluation
+- **LLM Integration**: OpenAI GPT-4 and Anthropic Claude support
+- **Hybrid Approach**: Rules for common cases, LLM for complex reasoning
+- **Configurable Logic**: Easy rule addition and modification
 
-```bash
-# 1. Get an API key (run this once)
-curl -X POST http://localhost:3000/v1/bootstrap \
-  -H 'Content-Type: application/json' \
-  -H 'X-Bootstrap-Token: dev-bootstrap-token' \
-  -d '{"plan":"free","api_key_name":"my-key","scopes":{}}'
+### Multi-Channel Notifications
+- **Email**: SMTP with HTML/text support and templates
+- **Slack**: Bot integration with rich message formatting
+- **Webhooks**: Custom endpoint delivery with retries
+- **SMS**: Twilio integration (placeholder)
+- **Templates**: Jinja2-based notification templates
 
-# 2. Set the API key
-export STORAGE_API_KEY=<your-key-from-step-1>
+### Action Execution
+- **Storage Actions**: Freeze, quarantine, compress, move to cold storage
+- **Security Actions**: Block IPs, enable MFA, suspend accounts
+- **Performance Actions**: Throttle keys, apply retention, virus scanning
+- **RESTful Integration**: Calls back to Ruby and Rust services
 
-# 3. Run the agent
-python agent.py
-```
+## 🚀 Quick Start
 
-## Usage Options
+### Prerequisites
+- Python 3.11+
+- Redis, Kafka, or RabbitMQ
+- Access to Ruby and Rust APIs
 
-### 1. Interactive Agent (with or without LLM)
-
-```bash
-# With Ollama (if running locally)
-python agent.py --api-key YOUR_KEY
-
-# Without LLM (command parsing only)
-python agent.py --api-key YOUR_KEY --no-llm
-
-# Custom Ollama settings
-python agent.py --api-key YOUR_KEY --ollama-url http://localhost:11434 --model llama3.2
-```
-
-### 2. CLI Tool (no LLM needed)
+### Installation
 
 ```bash
-# List buckets
-python cli.py --api-key YOUR_KEY list-buckets
+# Clone repository
+git clone https://github.com/sachinsharma3191/s3-ai-mcp.git
+cd s3-ai-mcp/services/agent
 
-# Create bucket
-python cli.py --api-key YOUR_KEY create-bucket my-bucket --region us-west-2
+# Install dependencies
+pip install -r requirements.txt
 
-# List objects
-python cli.py --api-key YOUR_KEY list-objects my-bucket
+# Configure environment
+cp config.json.example config.json
+# Edit config.json with your settings
 
-# Upload file
-python cli.py --api-key YOUR_KEY upload my-bucket --file myfile.txt
-
-# Upload text
-python cli.py --api-key YOUR_KEY upload my-bucket --key hello.txt --data "Hello World"
-
-# Delete object
-python cli.py --api-key YOUR_KEY delete-object my-bucket hello.txt
-
-# Delete bucket
-python cli.py --api-key YOUR_KEY delete-bucket my-bucket
+# Run the agent
+python main.py --config config.json
 ```
 
-### 3. Python Library
+### Docker Deployment
 
+```bash
+# Build image
+docker build -t s3-ai-agent .
+
+# Run with Docker Compose
+docker-compose -f ../../docker-compose.rust.yml up ai-agent
+```
+
+## 📊 Event Types
+
+### Storage Events
+- `ObjectCreated` - New object uploaded
+- `ObjectDeleted` - Object deleted
+- `ObjectModified` - Object metadata changed
+- `MultipartCompleted` - Multipart upload finished
+
+### Security Events
+- `PublicBucketDetected` - Public access configured
+- `AccessDenied` - Authentication/authorization failure
+- `VirusScanFailed` - Malware detected (if implemented)
+
+### Performance Events
+- `DownloadSpiked` - Unusual download activity
+- `ThrottlingActivated` - Rate limiting triggered
+
+### Bucket Events
+- `BucketCreated` - New bucket created
+- `BucketDeleted` - Bucket removed
+- `BucketPolicyChanged` - ACL modifications
+
+## 🤖 Decision Engine
+
+### Rule Types
+
+#### Threshold Rules
 ```python
-from storage_client import StorageClient
-
-client = StorageClient("http://localhost:3000", "your-api-key")
-
-# List buckets
-buckets = client.list_buckets()
-
-# Create bucket
-bucket = client.create_bucket("my-bucket", "us-west-2")
-
-# Upload file
-obj = client.create_object("my-bucket", "hello.txt", b"Hello World!")
-
-# List objects
-objects = client.list_objects("my-bucket")
-
-client.close()
+Rule(
+    id="download_spike",
+    name="Download Spike Detection",
+    rule_type=RuleType.THRESHOLD,
+    event_types=[EventType.DOWNLOAD_SPIKED],
+    conditions={"threshold": 1000, "operator": ">"},
+    actions=[ActionType.SEND_NOTIFICATION, ActionType.THROTTLE_KEY]
+)
 ```
 
-## Ollama Setup (Optional - for natural language)
-
-If you want natural language understanding, install Ollama locally:
-
-```bash
-# Install Ollama (macOS)
-brew install ollama
-
-# Start Ollama
-ollama serve
-
-# Pull a model
-ollama pull llama3.2
+#### Pattern Rules
+```python
+Rule(
+    id="suspicious_file",
+    name="Suspicious File Pattern",
+    rule_type=RuleType.PATTERN,
+    event_types=[EventType.OBJECT_CREATED],
+    conditions={"patterns": {"object_key": {"regex": r"\.exe$"}}},
+    actions=[ActionType.SCAN_FOR_VIRUSES]
+)
 ```
 
-The agent will automatically detect and use Ollama if available.
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `STORAGE_API_URL` | `http://localhost:3000` | Storage control plane URL |
-| `STORAGE_API_KEY` | (required) | API key from bootstrap |
-| `OLLAMA_URL` | `http://localhost:11434` | Ollama server URL |
-
-## Docker
-
-```bash
-# Build
-docker compose build agent
-
-# Run (needs API key)
-STORAGE_API_KEY=your-key docker compose --profile extras run agent
+#### Frequency Rules
+```python
+Rule(
+    id="frequent_deletes",
+    name="Frequent Object Deletion",
+    rule_type=RuleType.FREQUENCY,
+    event_types=[EventType.OBJECT_DELETED],
+    conditions={"max_count": 50, "window_minutes": 60},
+    actions=[ActionType.SEND_NOTIFICATION]
+)
 ```
+
+### LLM Integration
+
+The LLM is used for:
+- **Risk Assessment**: Analyzing event context and impact
+- **Action Recommendations**: Suggesting appropriate responses
+- **Notification Generation**: Creating human-readable messages
+- **Security Analysis**: Identifying potential threats
+
+## 🔧 Actions
+
+### Storage Actions
+- `FREEZE_OBJECT` - Make object immutable
+- `QUARANTINE_OBJECT` - Isolate suspicious objects
+- `COMPRESS_OBJECT` - Reduce storage costs
+- `MOVE_TO_COLD_STORAGE` - Archive to cheaper storage
+- `DELETE_OLD_VERSIONS` - Clean up version history
+
+### Security Actions
+- `CHANGE_ACL` - Modify access permissions
+- `BLOCK_IP` - Block malicious IP addresses
+- `ENABLE_MFA` - Enforce multi-factor authentication
+- `SUSPEND_ACCOUNT` - Temporarily disable account
+- `LOG_SECURITY_EVENT` - Record security incident
+
+### Performance Actions
+- `THROTTLE_KEY` - Rate limit API keys
+- `APPLY_RETENTION` - Set retention policies
+- `SCAN_FOR_VIRUSES` - Initiate malware scanning
+
+## 📈 Monitoring
+
+### Metrics (Prometheus)
+- `agent_events_processed_total` - Total events processed
+- `agent_events_failed_total` - Failed events
+- `agent_actions_executed_total` - Actions taken
+- `agent_notifications_sent_total` - Notifications delivered
+- `agent_event_processing_seconds` - Processing latency
+
+### Health Checks
+- `/metrics` - Prometheus metrics endpoint
+- Queue connection status
+- API service connectivity
+- LLM service availability
+
+## 🔒 Security
+
+### Authentication
+- API key authentication for Ruby/Rust services
+- JWT token validation for secure communication
+- Encrypted credential storage
+
+### Data Protection
+- Event data encryption in transit
+- Sensitive information redaction
+- Audit logging for all actions
+
+## 🚀 Deployment
+
+### Production Considerations
+- **High Availability**: Multiple agent instances
+- **Queue Scaling**: Partitioned topics/shards
+- **Monitoring**: Prometheus + Grafana dashboards
+- **Alerting**: PagerDuty/Slack integration
+- **Backup**: Event replay and recovery
+
+## 📄 License
+
+MIT License - see LICENSE file for details.

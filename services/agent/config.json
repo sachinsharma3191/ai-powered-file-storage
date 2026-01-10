@@ -1,0 +1,61 @@
+{
+  "queue": {
+    "type": "redis_streams",
+    "connection": {
+      "host": "redis",
+      "port": 6379,
+      "password": null,
+      "db": 0
+    },
+    "consumer_group": "s3-ai-agent",
+    "topics": ["storage-events"],
+    "max_retries": 3,
+    "dead_letter_queue": "dead-letter",
+    "batch_size": 10,
+    "processing_timeout": 30
+  },
+  "ruby_api_url": "http://storage-control-plane:3000",
+  "rust_api_url": "http://chunk-gateway:4000",
+  "api_key": "test-api-key",
+  "api_timeout": 30,
+  "max_concurrent_actions": 10,
+  "retry_attempts": 3,
+  "retry_delay": 5,
+  "metrics_port": 8080,
+  "llm": {
+    "enabled": false,
+    "openai_api_key": null,
+    "anthropic_api_key": null
+  },
+  "notifications": {
+    "email": {
+      "smtp_host": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": null,
+      "password": null,
+      "from_address": "noreply@s3-ai-mcp.com",
+      "use_tls": true
+    },
+    "slack": {
+      "bot_token": null
+    },
+    "webhook": {
+      "timeout": 30,
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer webhook-token"
+      }
+    },
+    "templates_dir": "templates",
+    "retry_attempts": 3,
+    "retry_delay": 5
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json"
+  },
+  "sentry": {
+    "traces_sample_rate": 0.1
+  },
+  "environment": "development"
+}
