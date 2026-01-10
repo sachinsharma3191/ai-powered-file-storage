@@ -1,0 +1,108 @@
+name: Ruby Tests and Docker Build Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: storage_control_plane_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '4.0.0'
+        bundler-cache: true
+
+    - name: Install dependencies
+      working-directory: ./services/storage-control-plane
+      run: |
+        bundle install
+        bundle exec rails db:create db:migrate RAILS_ENV=test
+
+    - name: Run tests with 100% coverage
+      working-directory: ./services/storage-control-plane
+      run: |
+        rake coverage:run
+      env:
+        COVERAGE_MINIMUM: 100.0
+        RAILS_ENV: test
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/storage_control_plane_test
+
+    - name: Run Docker validation tests
+      working-directory: ./services/storage-control-plane
+      run: |
+        rake docker_validate
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-reports
+        path: services/storage-control-plane/coverage/
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: services/storage-control-plane/test-results/
+
+    - name: Build Docker image with test validation
+      working-directory: ./services/storage-control-plane
+      run: |
+        docker build -f Dockerfile.test -t storage-control-plane:test .
+
+    - name: Security audit
+      working-directory: ./services/storage-control-plane
+      run: |
+        bundle exec bundler-audit --update
+        bundle exec brakeman --no-pager
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push production image
+      working-directory: ./services/storage-control-plane
+      run: |
+        docker build -f Dockerfile -t storage-control-plane:latest .
+        docker tag storage-control-plane:latest ${{ secrets.DOCKER_USERNAME }}/storage-control-plane:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/storage-control-plane:latest
+
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying to production..."
+        # Add deployment commands here

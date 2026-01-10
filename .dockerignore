@@ -1,0 +1,95 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+CHANGELOG.md
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Environment files
+.env*
+.envrc
+
+# Logs
+*.log
+logs
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+node_modules/
+bower_components/
+vendor/bundle/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Ruby/Rails
+*.rbc
+*.sassc
+.sass-cache
+capybara-*.html
+.rspec
+/tmp
+/public/assets
+.bundler
+.ruby-version
+.ruby-gemset
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Rust
+target/
+Cargo.lock
+
+# Temporary files
+*.tmp
+*.temp
