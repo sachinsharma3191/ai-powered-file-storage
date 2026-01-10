@@ -54,7 +54,7 @@ describe('FileUploadComponent', () => {
 
   describe('Drag and Drop', () => {
     it('should handle drag over', () => {
-      const event = new Event('dragover', { bubbles: true, cancelable: true });
+      const event = new DragEvent('dragover', { bubbles: true, cancelable: true });
       spyOn(event, 'preventDefault');
 
       component.onDragOver(event);
@@ -64,7 +64,7 @@ describe('FileUploadComponent', () => {
     });
 
     it('should handle drag leave', () => {
-      const event = new Event('dragleave', { bubbles: true, cancelable: true });
+      const event = new DragEvent('dragleave', { bubbles: true, cancelable: true });
       spyOn(event, 'preventDefault');
 
       component.onDragOver(event);
@@ -89,9 +89,9 @@ describe('FileUploadComponent', () => {
       // Create a mock DataTransfer object
       const dataTransfer = {
         files: [file]
-      } as DataTransfer;
+      } as unknown as DataTransfer;
 
-      const event = new Event('drop', { bubbles: true, cancelable: true });
+      const event = new DragEvent('drop', { bubbles: true, cancelable: true });
       spyOn(event, 'preventDefault');
       Object.defineProperty(event, 'dataTransfer', { value: dataTransfer });
 

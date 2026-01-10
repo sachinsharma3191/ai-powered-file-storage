@@ -383,7 +383,8 @@ describe('BucketObjectsComponent', () => {
     beforeEach(() => {
       mockActivatedRoute.params = of({
         bucketName: 'test-bucket'
-      }));
+      });
+      fixture.detectChanges();
     });
 
     it('should handle create folder action', () => {
