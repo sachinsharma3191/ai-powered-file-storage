@@ -35,6 +35,17 @@ describe('BucketObjectsComponent', () => {
     has_more: true
   };
 
+  const mockCreateObjectResponse: CreateObjectResponse = {
+    object: mockStorageObject,
+    version: {
+      id: 1,
+      version_id: 'version-123'
+    },
+    chunk_gateway_base_url: 'https://chunk-gateway.example.com',
+    token: 'upload-token-123',
+    ttl_seconds: 3600
+  };
+
   const mockRateLimitInfo: RateLimitInfo = {
     limit: 1000,
     remaining: 850,
@@ -479,7 +490,7 @@ describe('BucketObjectsComponent', () => {
       };
 
       mockFileSecurityService.validateFile.and.returnValue(mockResult);
-      mockStorageService.createObject.and.returnValue(of({}));
+      mockStorageService.createObject.and.returnValue(of(mockCreateObjectResponse));
 
       component.onFilesSelected([validFile]);
 
@@ -534,7 +545,7 @@ describe('BucketObjectsComponent', () => {
       };
 
       mockFileSecurityService.validateFile.and.returnValue(mockResult);
-      mockStorageService.createObject.and.returnValue(of({}));
+      mockStorageService.createObject.and.returnValue(of(mockCreateObjectResponse));
 
       component.onFilesSelected([file1, file2]);
 
@@ -561,7 +572,7 @@ describe('BucketObjectsComponent', () => {
       };
 
       mockFileSecurityService.validateFile.and.returnValue(mockResult);
-      mockStorageService.createObject.and.returnValue(of({}));
+      mockStorageService.createObject.and.returnValue(of(mockCreateObjectResponse));
 
       component.onFilesSelected([validFile]);
 
