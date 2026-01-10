@@ -8,6 +8,8 @@ module V1
       scope = bucket.storage_objects.where(deleted_marker: false)
 
       prefix = params[:prefix].presence
+      delimiter = params[:delimiter].presence
+      
       if prefix
         scope = scope.where("key LIKE ?", "#{ActiveRecord::Base.sanitize_sql_like(prefix)}%")
       end
@@ -21,19 +23,57 @@ module V1
       limit = 1 if limit < 1
       limit = 1000 if limit > 1000
 
-      objects = scope.includes(:current_version).order(:key).limit(limit + 1)
-      
-      has_more = objects.length > limit
-      objects = objects.first(limit) if has_more
+      # Handle delimiter for folder simulation
+      if delimiter
+        objects = []
+        common_prefixes = Set.new
+        
+        # Get all keys up to limit + extra to find common prefixes
+        all_objects = scope.select(:key).order(:key).limit(limit * 2).pluck(:key)
+        
+        all_objects.each do |key|
+          # Remove prefix for comparison
+          relative_key = key.sub(/^#{Regexp.escape(prefix.to_s)}/, '')
+          
+          if delimiter && relative_key.include?(delimiter)
+            # Extract common prefix up to delimiter
+            common_prefix = prefix + relative_key.split(delimiter).first + delimiter
+            common_prefixes.add(common_prefix) if common_prefixes.size < limit
+          else
+            objects << bucket.storage_objects.includes(:current_version).find_by!(key: key)
+            break if objects.size >= limit
+          end
+        end
+        
+        has_more = (objects.size >= limit) || (common_prefixes.size >= limit) || 
+                  (all_objects.size > (objects.size + common_prefixes.size))
+        next_cursor = objects.last&.key if objects.any? && has_more
+        
+        render json: {
+          bucket: bucket.name,
+          objects: objects.map { |o| serialize_object(o) },
+          common_prefixes: common_prefixes.to_a.sort,
+          delimiter: delimiter,
+          prefix: prefix,
+          cursor: next_cursor,
+          has_more: has_more
+        }
+      else
+        # Original behavior without delimiter
+        objects = scope.includes(:current_version).order(:key).limit(limit + 1)
+        
+        has_more = objects.length > limit
+        objects = objects.first(limit) if has_more
 
-      next_cursor = objects.last&.key if has_more
+        next_cursor = objects.last&.key if has_more
 
-      render json: {
-        bucket: bucket.name,
-        objects: objects.map { |o| serialize_object(o) },
-        cursor: next_cursor,
-        has_more: has_more
-      }
+        render json: {
+          bucket: bucket.name,
+          objects: objects.map { |o| serialize_object(o) },
+          cursor: next_cursor,
+          has_more: has_more
+        }
+      end
     end
 
     def head

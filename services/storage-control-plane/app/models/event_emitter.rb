@@ -176,6 +176,77 @@ class EventEmitter
       publish_event('storage-events', event)
     end
     
+    # Emit object expired event
+    def emit_object_expired(bucket:, object:, version:, account_id:, rule: nil)
+      event = {
+        event_id: SecureRandom.uuid,
+        event_type: 'ObjectExpired',
+        timestamp: Time.current.iso8601,
+        account_id: account_id,
+        region: bucket.region,
+        bucket_name: bucket.name,
+        object_key: object.key,
+        object_size: version&.size || 0,
+        object_etag: version&.etag,
+        version_id: version&.id,
+        rule: rule,
+        metadata: {
+          service: 'storage-control-plane',
+          ruby_version: Rails.version,
+          environment: Rails.env
+        }
+      }
+      
+      publish_event('lifecycle-events', event)
+    end
+    
+    # Emit object transitioned event
+    def emit_object_transitioned(bucket:, object:, version:, account_id:, from_class:, to_class:, rule: nil)
+      event = {
+        event_id: SecureRandom.uuid,
+        event_type: 'ObjectTransitioned',
+        timestamp: Time.current.iso8601,
+        account_id: account_id,
+        region: bucket.region,
+        bucket_name: bucket.name,
+        object_key: object.key,
+        object_size: version&.size || 0,
+        object_etag: version&.etag,
+        version_id: version&.id,
+        from_storage_class: from_class,
+        to_storage_class: to_class,
+        rule: rule,
+        metadata: {
+          service: 'storage-control-plane',
+          ruby_version: Rails.version,
+          environment: Rails.env
+        }
+      }
+      
+      publish_event('lifecycle-events', event)
+    end
+    
+    # Emit object permanently deleted event
+    def emit_object_permanently_deleted(bucket:, object_key:, account_id:, rule: nil)
+      event = {
+        event_id: SecureRandom.uuid,
+        event_type: 'ObjectPermanentlyDeleted',
+        timestamp: Time.current.iso8601,
+        account_id: account_id,
+        region: bucket.region,
+        bucket_name: bucket.name,
+        object_key: object_key,
+        rule: rule,
+        metadata: {
+          service: 'storage-control-plane',
+          ruby_version: Rails.version,
+          environment: Rails.env
+        }
+      }
+      
+      publish_event('lifecycle-events', event)
+    end
+    
     # Emit access denied event
     def emit_access_denied(account_id:, bucket_name: nil, object_key: nil, user_id: nil, ip_address: nil, user_agent: nil, error_message: nil, request_id: nil, region: nil)
       event = {

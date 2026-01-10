@@ -1,15 +1,17 @@
 mod auth;
 mod chunker;
 mod errors;
-mod events;
 mod handlers;
 mod metrics;
 mod models;
 mod storage;
 mod utils;
+mod events;
+mod rate_limit;
 
 use std::env;
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 use axum::routing::{get, put};
 use axum::Router;
@@ -19,6 +21,7 @@ use tracing_subscriber::EnvFilter;
 use auth::AuthService;
 use events::EventService;
 use metrics::MetricsService;
+use rate_limit::{RateLimiter, RateLimitConfig};
 use storage::StorageService;
 
 #[tokio::main]
@@ -71,6 +74,10 @@ async fn main() {
     };
     let event_service = EventService::new(event_config);
 
+    // Initialize rate limiter
+    let rate_limit_config = RateLimitConfig::default();
+    let rate_limiter = Arc::new(RateLimiter::new(rate_limit_config));
+
     let app_state = models::AppState::new(auth_service, storage_service, metrics_service, event_service);
 
     let app = Router::new()
@@ -83,6 +90,10 @@ async fn main() {
             "/dp/v1/objects/:object_version_id",
             get(handlers::get_object).head(handlers::head_object),
         )
+        .layer(axum::middleware::from_fn_with_state(
+            rate_limiter.clone(),
+            rate_limit::rate_limit_middleware,
+        ))
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 
