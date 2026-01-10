@@ -234,7 +234,7 @@ export class LifecyclePolicyComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.params.subscribe(params => {
+    this.route.params.subscribe((params: any) => {
       this.bucketName = params['bucketName'];
       this.loadPolicy();
     });
@@ -245,7 +245,7 @@ export class LifecyclePolicyComponent implements OnInit {
       next: (policy) => {
         this.policy = policy;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading lifecycle policy:', error);
         // Create empty policy if none exists
         this.policy = {
@@ -311,11 +311,11 @@ export class LifecyclePolicyComponent implements OnInit {
 
   savePolicy(): void {
     this.storageService.setLifecyclePolicy(this.bucketName, this.policy).subscribe({
-      next: (savedPolicy) => {
+      next: (savedPolicy: any) => {
         this.policy = savedPolicy;
         console.log('Policy saved successfully');
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error saving policy:', error);
         alert('Failed to save policy. Please try again.');
       }

@@ -167,9 +167,9 @@ export class BucketsComponent implements OnInit {
   loadBuckets(): void {
     this.loading.set(true);
     this.storageService.listBuckets().subscribe({
-      next: (buckets) => {
+      next: (buckets: any) => {
         // Add mock lifecycle data for now (would come from API)
-        const bucketsWithLifecycle = buckets.map(bucket => ({
+        const bucketsWithLifecycle = buckets.map((bucket: any) => ({
           ...bucket,
           lifecycleEnabled: Math.random() > 0.7, // Mock: 30% have lifecycle
           lifecycleRules: Math.floor(Math.random() * 5) // Mock: 0-4 rules
@@ -206,7 +206,7 @@ export class BucketsComponent implements OnInit {
         this.closeModal();
         this.loadBuckets();
       },
-      error: (err) => {
+      error: (err: any) => {
         this.createError.set(err.error?.error || 'Failed to create bucket');
         this.creating.set(false);
       }
@@ -217,7 +217,7 @@ export class BucketsComponent implements OnInit {
     if (confirm(`Are you sure you want to delete bucket "${bucket.name}"?`)) {
       this.storageService.deleteBucket(bucket.name).subscribe({
         next: () => this.loadBuckets(),
-        error: (err) => alert(err.error?.error || 'Failed to delete bucket')
+        error: (err: any) => alert(err.error?.error || 'Failed to delete bucket')
       });
     }
   }

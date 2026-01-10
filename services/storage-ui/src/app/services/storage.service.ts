@@ -119,7 +119,7 @@ export class StorageService {
     return this.http.delete<void>(`/api/v1/buckets/${bucketName}/objects/${encodeURIComponent(key)}`);
   }
 
-  uploadToChunkGateway(gatewayUrl: string, token: string, data: ArrayBuffer): Observable<{ etag: string }> {
+  uploadToChunkGateway(gatewayUrl: string, token: string, data: ArrayBuffer): Observable<{ etag: string; rateLimit?: RateLimitInfo }> {
     return this.http.put<{ etag: string }>(gatewayUrl, data, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -127,7 +127,7 @@ export class StorageService {
       },
       observe: 'response'
     }).pipe(
-      map(response => ({
+      map((response: any) => ({
         etag: response.body?.etag || '',
         rateLimit: this.extractRateLimitInfo(response.headers)
       }))

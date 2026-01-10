@@ -224,7 +224,7 @@ export class BucketObjectsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
+    this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params: any) => {
       this.bucketName = params['bucketName'];
       this.currentPath = params['path'] || '';
       this.updatePathParts();
@@ -275,7 +275,7 @@ export class BucketObjectsComponent implements OnInit, OnDestroy {
           this.loading = false;
           this.loadingMore = false;
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading objects:', error);
           this.loading = false;
           this.loadingMore = false;
