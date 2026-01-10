@@ -1,5 +1,8 @@
 require "securerandom"
 
+# Import EventEmitter for event publishing
+require_relative "../../models/event_emitter"
+
 module V1
   class MultipartUploadsController < BaseController
     # Multipart upload (large objects)
@@ -175,6 +178,17 @@ module V1
         upload.update!(status: "completed")
 
         completed_object = storage_object
+        
+        # Emit ObjectCreated event for Python agent
+        if EventEmitter.configured?
+          EventEmitter.emit_object_created(
+            bucket: bucket,
+            object: completed_object,
+            version: object_version,
+            account_id: current_account.id,
+            region: bucket.region
+          )
+        end
       end
 
       render json: {

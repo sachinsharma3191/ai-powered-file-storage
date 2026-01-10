@@ -18,6 +18,7 @@ tower-http = { version = "0.5", features = ["trace"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.6", features = ["v4", "serde"] }
 rand = "0.8"
+redis = { version = "0.24", features = ["tokio-comp", "json"] }
 
 [dev-dependencies]
 # Testing framework

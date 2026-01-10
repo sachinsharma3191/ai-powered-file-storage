@@ -1,7 +1,9 @@
 mod auth;
 mod chunker;
 mod errors;
+mod events;
 mod handlers;
+mod metrics;
 mod models;
 mod storage;
 mod utils;
@@ -15,6 +17,8 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 
 use auth::AuthService;
+use events::EventService;
+use metrics::MetricsService;
 use storage::StorageService;
 
 #[tokio::main]
@@ -41,7 +45,33 @@ async fn main() {
     let auth_service = AuthService::new(secret, region);
     let storage_service = StorageService::new();
 
-    let app_state = models::AppState::new(auth_service, storage_service);
+    // Initialize metrics service
+    let download_threshold = env::var("DOWNLOAD_THRESHOLD")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1000); // Default: 1000 downloads per window
+    let metrics_window_minutes = env::var("METRICS_WINDOW_MINUTES")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(60); // Default: 60 minutes
+    let metrics_service = MetricsService::new(download_threshold, metrics_window_minutes);
+
+    // Initialize event service
+    let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
+    let event_stream = env::var("EVENT_STREAM").unwrap_or_else(|_| "storage-events".to_string());
+    let events_enabled = env::var("EVENTS_ENABLED")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(true);
+    
+    let event_config = events::EventConfig {
+        redis_url,
+        stream_name: event_stream,
+        enabled: events_enabled,
+    };
+    let event_service = EventService::new(event_config);
+
+    let app_state = models::AppState::new(auth_service, storage_service, metrics_service, event_service);
 
     let app = Router::new()
         .route("/healthz", get(handlers::health))

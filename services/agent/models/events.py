@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, validator
 class EventType(str, Enum):
     """Storage event types"""
     OBJECT_CREATED = "ObjectCreated"
+    OBJECT_DOWNLOADED = "ObjectDownloaded"
     OBJECT_DELETED = "ObjectDeleted"
     OBJECT_MODIFIED = "ObjectModified"
     MULTIPART_COMPLETED = "MultipartCompleted"

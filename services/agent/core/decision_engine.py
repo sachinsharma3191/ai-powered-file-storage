@@ -410,6 +410,16 @@ DEFAULT_RULES = [
     ),
     
     Rule(
+        id="object_downloaded_tracking",
+        name="Object Download Tracking", 
+        rule_type=RuleType.FREQUENCY,
+        event_types=[EventType.OBJECT_DOWNLOADED],
+        conditions={"time_window": 3600, "max_count": 100},  # Track up to 100 downloads per hour
+        actions=[ActionType.LOG_METRIC],
+        priority=10
+    ),
+    
+    Rule(
         id="download_spike_alert",
         name="Download Spike Detection", 
         rule_type=RuleType.THRESHOLD,

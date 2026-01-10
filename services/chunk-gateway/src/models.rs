@@ -2,19 +2,30 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::auth::{AuthService, Claims};
+use crate::events::EventService;
+use crate::metrics::MetricsService;
 use crate::storage::StorageService;
 
 #[derive(Clone)]
 pub struct AppState {
     pub auth_service: AuthService,
     pub storage_service: StorageService,
+    pub metrics_service: MetricsService,
+    pub event_service: EventService,
 }
 
 impl AppState {
-    pub fn new(auth_service: AuthService, storage_service: StorageService) -> Self {
+    pub fn new(
+        auth_service: AuthService, 
+        storage_service: StorageService,
+        metrics_service: MetricsService,
+        event_service: EventService
+    ) -> Self {
         Self {
             auth_service,
             storage_service,
+            metrics_service,
+            event_service,
         }
     }
 }

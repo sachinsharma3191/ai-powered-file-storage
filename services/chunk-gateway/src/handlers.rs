@@ -98,6 +98,27 @@ pub async fn get_object(
         stored_data.data.clone()
     };
 
+    // Track download metrics and emit event
+    let download_size = data.len() as u64;
+    let _ = state.metrics_service.record_download(
+        &claims.sub,
+        &bucket,
+        &key,
+        download_size,
+    ).await;
+
+    // Check for download anomalies and emit event if needed
+    if let Some(anomaly) = state.metrics_service.check_download_anomaly(&claims.sub, &bucket, &key).await {
+        let _ = state.event_service.emit_download_event(
+            &claims.sub,
+            &bucket,
+            &key,
+            download_size,
+            anomaly.download_count,
+            anomaly.threshold,
+        ).await;
+    }
+
     // Build response headers
     let mut response_headers = HeaderMap::new();
     response_headers.insert(header::CONTENT_TYPE, "application/octet-stream".parse().unwrap());

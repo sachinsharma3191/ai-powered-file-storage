@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class ActionType(str, Enum):
     """Action types that can be executed"""
     SEND_NOTIFICATION = "send_notification"
+    LOG_METRIC = "log_metric"
     LOG_SECURITY_EVENT = "log_security_event"
     APPLY_RETENTION = "apply_retention"
     CHANGE_ACL = "change_acl"

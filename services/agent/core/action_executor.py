@@ -331,6 +331,7 @@ class PerformanceActionExecutor(BaseActionExecutor):
     def get_supported_actions(self) -> List[ActionType]:
         """Get supported performance actions"""
         return [
+            ActionType.LOG_METRIC,
             ActionType.THROTTLE_KEY,
             ActionType.APPLY_RETENTION,
             ActionType.SCAN_FOR_VIRUSES
@@ -348,7 +349,9 @@ class PerformanceActionExecutor(BaseActionExecutor):
         )
         
         try:
-            if action.action_type == ActionType.THROTTLE_KEY:
+            if action.action_type == ActionType.LOG_METRIC:
+                result = await self._log_metric(event, action)
+            elif action.action_type == ActionType.THROTTLE_KEY:
                 result = await self._throttle_key(event, action)
             elif action.action_type == ActionType.APPLY_RETENTION:
                 result = await self._apply_retention(event, action)
@@ -412,6 +415,32 @@ class PerformanceActionExecutor(BaseActionExecutor):
         )
         response.raise_for_status()
         return response.json()
+
+    async def _log_metric(self, event: BaseEvent, action: Action) -> Dict[str, Any]:
+        """Log download metrics for tracking"""
+        metric_data = {
+            "event_id": event.event_id,
+            "event_type": event.event_type,
+            "timestamp": event.timestamp.isoformat(),
+            "user_id": getattr(event, 'user_id', 'unknown'),
+            "bucket_name": getattr(event, 'bucket_name', 'unknown'),
+            "object_key": getattr(event, 'object_key', 'unknown'),
+            "download_size": getattr(event, 'download_size', 0),
+            "metric_name": "object_download",
+            "metric_value": 1,
+            "metric_unit": "count"
+        }
+        
+        # Log to application logs
+        self.logger.info(f"Download metric logged: {metric_data}")
+        
+        # Could also send to metrics system like Prometheus, CloudWatch, etc.
+        # For now, just return the logged data
+        return {
+            "status": "logged",
+            "metric_data": metric_data,
+            "logged_at": datetime.utcnow().isoformat()
+        }
 
 
 class ActionExecutor:

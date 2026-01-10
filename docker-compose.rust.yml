@@ -70,6 +70,15 @@ services:
       CHUNK_GATEWAY_REGION: us-west-2
       BIND_ADDR: 0.0.0.0
       PORT: 4000
+      
+      # Metrics configuration
+      DOWNLOAD_THRESHOLD: 1000
+      METRICS_WINDOW_MINUTES: 60
+      
+      # Events configuration
+      REDIS_URL: redis://redis:6379/1
+      EVENT_STREAM: storage-events
+      EVENTS_ENABLED: "true"
       RUST_LOG: info
     volumes:
       - ./services/chunk-gateway:/app
