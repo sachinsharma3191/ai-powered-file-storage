@@ -4,15 +4,71 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
- axum = { version = "0.7", features = ["macros"] }
- tokio = { version = "1.37", features = ["full"] }
- serde = { version = "1.0", features = ["derive"] }
- serde_json = "1.0"
- jsonwebtoken = "9"
- sha2 = "0.10"
- hex = "0.4"
- thiserror = "1.0"
- tracing = "0.1"
- tracing-subscriber = { version = "0.3", features = ["env-filter"] }
- tower-http = { version = "0.5", features = ["trace"] }
- chrono = { version = "0.4", features = ["serde"] }
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1.37", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+jsonwebtoken = "9"
+sha2 = "0.10"
+hex = "0.4"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tower-http = { version = "0.5", features = ["trace"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+rand = "0.8"
+
+[dev-dependencies]
+# Testing framework
+tokio-test = "0.4"
+axum-test = "15.0"
+tower = { version = "0.4", features = ["util"] }
+hyper = { version = "1.0", features = ["full"] }
+
+# Mocking and test utilities
+mockall = "0.12"
+wiremock = "0.6"
+tempfile = "3.8"
+
+# Test data generation
+fake = { version = "2.9", features = ["derive"] }
+proptest = "1.4"
+quickcheck = "1.0"
+quickcheck_macros = "1.0"
+
+# Database and external services
+redis = { version = "0.24", features = ["tokio-comp", "json"] }
+testcontainers = "0.15"
+testcontainers-modules = { version = "0.15", features = ["redis", "kafka"] }
+
+# HTTP testing
+reqwest = { version = "0.11", features = ["json"] }
+
+# Async testing
+futures = "0.3"
+futures-util = "0.3"
+
+# Time testing
+tokio-cron-scheduler = "0.10"
+
+# Environment and configuration
+dotenvy = "0.15"
+
+# Performance testing
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# Code coverage
+tarpaulin = "0.27"
+
+[[bench]]
+name = "chunking"
+harness = false
+
+[[bench]]
+name = "storage"
+harness = false
+
+[[bench]]
+name = "auth"
+harness = false

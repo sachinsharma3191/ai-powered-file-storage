@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from abc import ABC, abstract method
+from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Callable, Dict, List, Optional, Type, Union
 from dataclasses import dataclass
