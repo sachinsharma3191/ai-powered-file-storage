@@ -1,6 +1,6 @@
-# S3 AI MCP Agent - Event-driven Automation & Notifications
+# AI Powered File Storage - Event-driven Automation & Notifications
 
-A sophisticated Python agent that provides intelligent automation and notification capabilities for the S3 AI MCP storage system. The agent connects to both Ruby control plane and Rust data plane, processing events through rules and LLM-powered decision making.
+A sophisticated Python agent that provides intelligent automation and notification capabilities for the AI Powered File Storage system. The agent connects to both Ruby control plane and Rust data plane, processing events through rules and LLM-powered decision making.
 
 ## 🎯 Core Features
 

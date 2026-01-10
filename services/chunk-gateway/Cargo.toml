@@ -1,5 +1,5 @@
 [package]
-name = "chunk-gateway"
+name = "ai-powered-file-storage-chunk-gateway"
 version = "0.1.0"
 edition = "2021"
 

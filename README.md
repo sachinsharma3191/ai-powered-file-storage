@@ -1,4 +1,4 @@
-# S3 AI Storage Platform
+# AI Powered File Storage
 
 A comprehensive, self-hosted file storage platform with AI-powered capabilities. Features S3-compatible API, web UI, and intelligent event-driven automation.
 

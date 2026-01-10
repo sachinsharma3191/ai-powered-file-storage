@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Interactive AI agent for File Storage - works with Ollama (offline) or without LLM.
+Interactive AI agent for AI Powered File Storage - works with Ollama (offline) or without LLM.
 No external API keys required.
 """
 import os

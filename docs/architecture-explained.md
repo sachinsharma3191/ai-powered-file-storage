@@ -1,14 +1,14 @@
-# S3 AI Storage Platform - Architecture Explained
+# AI Powered File Storage - Architecture Explained
 
 ## 🎯 What This System Actually Is
 
-This is **NOT** a Model Context Protocol (MCP) server. Despite the project name containing "MCP", this is a **comprehensive S3-compatible storage platform with AI-powered automation**.
+This is a **comprehensive S3-compatible storage platform with AI-powered automation**.
 
 ## 🏗️ Real Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          S3 AI STORAGE PLATFORM                        │
+│                     AI POWERED FILE STORAGE                             │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐      │

@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: s3_ai_mcp_development
+      POSTGRES_DB: ai_powered_file_storage_development
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -38,7 +38,7 @@ services:
       - "3000:3000"
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_powered_file_storage_development
       REDIS_URL: redis://redis:6379/0
       SCOPED_JWT_SECRET: rust-integration-secret-key-2024
       CHUNK_GATEWAY_BASE_URL: http://chunk-gateway:4000
@@ -101,7 +101,7 @@ services:
       - "5000:5000"
     environment:
       REDIS_URL: redis://redis:6379/0
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_powered_file_storage_development
     volumes:
       - ./services/notification-service:/app
     depends_on:
@@ -117,7 +117,7 @@ services:
       context: ./services/outbox-worker
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/s3_ai_mcp_development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ai_powered_file_storage_development
       REDIS_URL: redis://redis:6379/0
       NOTIFICATION_SERVICE_URL: http://notification-service:5000
     volumes:
@@ -143,7 +143,7 @@ services:
       QUEUE_TYPE: redis_streams
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      CONSUMER_GROUP: s3-ai-agent
+      CONSUMER_GROUP: ai-powered-file-storage-agent
       QUEUE_TOPICS: storage-events
       
       # API connections
@@ -161,7 +161,7 @@ services:
       SMTP_PORT: 587
       SMTP_USERNAME: 
       SMTP_PASSWORD: 
-      FROM_ADDRESS: noreply@s3-ai-mcp.com
+      FROM_ADDRESS: noreply@ai-powered-file-storage.com
       SLACK_BOT_TOKEN: 
       
       # Logging and monitoring
@@ -208,4 +208,4 @@ volumes:
 
 networks:
   default:
-    name: s3-ai-mcp-network
+    name: ai-powered-file-storage-network

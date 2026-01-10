@@ -16,7 +16,7 @@ import { SessionService } from '../../services/session.service';
               <svg class="w-8 h-8 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
               </svg>
-              <span class="text-xl font-bold text-gray-900">S3 Storage</span>
+              <span class="text-xl font-bold text-gray-900">AI Powered File Storage</span>
             </a>
           </div>
           <div class="flex items-center gap-6">

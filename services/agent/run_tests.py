@@ -210,7 +210,7 @@ def generate_test_report():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Test runner for S3 AI MCP Agent")
+    parser = argparse.ArgumentParser(description="Test runner for AI Powered File Storage Agent")
     parser.add_argument(
         "command",
         choices=[

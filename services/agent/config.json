@@ -7,7 +7,7 @@
       "password": null,
       "db": 0
     },
-    "consumer_group": "s3-ai-agent",
+    "consumer_group": "ai-powered-file-storage-agent",
     "topics": ["storage-events"],
     "max_retries": 3,
     "dead_letter_queue": "dead-letter",
@@ -33,7 +33,7 @@
       "smtp_port": 587,
       "username": null,
       "password": null,
-      "from_address": "noreply@s3-ai-mcp.com",
+      "from_address": "noreply@ai-powered-file-storage.com",
       "use_tls": true
     },
     "slack": {

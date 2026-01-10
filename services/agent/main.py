@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-S3 AI Storage Agent - Event-driven automation and notification system
+AI Powered File Storage - Event-driven automation and notification system
 
 This agent connects to both Ruby control plane and Rust data plane,
 processing events and executing automated actions based on rules
