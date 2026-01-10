@@ -263,7 +263,8 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         'llm': {
             'enabled': os.getenv('LLM_ENABLED', 'false').lower() == 'true',
             'openai_api_key': os.getenv('OPENAI_API_KEY'),
-            'anthropic_api_key': os.getenv('ANTHROPIC_API_KEY')
+            'anthropic_api_key': os.getenv('ANTHROPIC_API_KEY'),
+            'ollama_url': os.getenv('OLLAMA_URL', 'http://localhost:11434')
         },
         'notifications': {
             'email': {

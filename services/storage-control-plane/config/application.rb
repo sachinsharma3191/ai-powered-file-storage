@@ -44,7 +44,7 @@ module AiPoweredFileStorage
     # Configure CORS to allow cross-origin requests
     config.middleware.insert_before 0, Rack::Cors do
       allow do
-        origins ['http://localhost:4200', 'http://localhost:3000', 'https://google.com', 'https://*.google.com', 'https://accounts.google.com']
+        origins ENV.fetch('CORS_ORIGINS', 'http://localhost:4200,http://localhost:3000,https://google.com,https://*.google.com,https://accounts.google.com').split(',')
         resource '*',
           headers: :any,
           methods: [:get, :post, :put, :patch, :delete, :options, :head],

@@ -46,7 +46,7 @@ import { SettingsService, OllamaConfig } from '../../services/settings.service';
               type="text"
               [(ngModel)]="ollamaUrl"
               class="input"
-              placeholder="http://ollama:11434"
+              placeholder="{{ ollamaUrl }}"
             />
             <p class="text-xs text-gray-500 mt-1">URL of the Ollama server</p>
           </div>
@@ -155,7 +155,7 @@ import { SettingsService, OllamaConfig } from '../../services/settings.service';
 export class SettingsComponent implements OnInit {
   private settingsService = inject(SettingsService);
 
-  ollamaUrl = 'http://ollama:11434';
+  ollamaUrl = process.env['NG_APP_OLLAMA_URL'] || 'http://ollama:11434';
   ollamaModel = 'llama3.2';
   ollamaApiKey = '';
   newModelName = '';

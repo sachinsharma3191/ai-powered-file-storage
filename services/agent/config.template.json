@@ -1,0 +1,62 @@
+{
+  "queue": {
+    "type": "redis_streams",
+    "connection": {
+      "host": "${REDIS_HOST:-redis}",
+      "port": ${REDIS_PORT:-6379},
+      "password": ${REDIS_PASSWORD:-null},
+      "db": ${REDIS_DB:-0}
+    },
+    "consumer_group": "${CONSUMER_GROUP:-ai-powered-file-storage-agent}",
+    "topics": ["storage-events"],
+    "max_retries": ${MAX_RETRIES:-3},
+    "dead_letter_queue": "dead-letter",
+    "batch_size": ${BATCH_SIZE:-10},
+    "processing_timeout": ${PROCESSING_TIMEOUT:-30}
+  },
+  "ruby_api_url": "${RUBY_API_URL:-http://storage-control-plane:3000}",
+  "rust_api_url": "${RUST_API_URL:-http://chunk-gateway:4000}",
+  "api_key": "${API_KEY:-test-api-key}",
+  "api_timeout": ${API_TIMEOUT:-30},
+  "max_concurrent_actions": ${MAX_CONCURRENT_ACTIONS:-10},
+  "retry_attempts": ${RETRY_ATTEMPTS:-3},
+  "retry_delay": ${RETRY_DELAY:-5},
+  "metrics_port": ${METRICS_PORT:-8080},
+  "llm": {
+    "enabled": ${LLM_ENABLED:-false},
+    "openai_api_key": ${OPENAI_API_KEY:-null},
+    "anthropic_api_key": ${ANTHROPIC_API_KEY:-null},
+    "ollama_url": "${OLLAMA_URL:-http://ollama:11434}"
+  },
+  "notifications": {
+    "email": {
+      "smtp_host": "${SMTP_HOST:-smtp.gmail.com}",
+      "smtp_port": ${SMTP_PORT:-587},
+      "username": ${SMTP_USERNAME:-null},
+      "password": ${SMTP_PASSWORD:-null},
+      "from_address": "${FROM_ADDRESS:-noreply@ai-powered-file-storage.com}",
+      "use_tls": ${SMTP_USE_TLS:-true}
+    },
+    "slack": {
+      "bot_token": ${SLACK_BOT_TOKEN:-null}
+    },
+    "webhook": {
+      "timeout": ${WEBHOOK_TIMEOUT:-30},
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ${WEBHOOK_TOKEN:-webhook-token}"
+      }
+    },
+    "templates_dir": "templates",
+    "retry_attempts": ${NOTIFICATION_RETRY_ATTEMPTS:-3},
+    "retry_delay": ${NOTIFICATION_RETRY_DELAY:-5}
+  },
+  "logging": {
+    "level": "${LOG_LEVEL:-INFO}",
+    "format": "${LOG_FORMAT:-json}"
+  },
+  "sentry": {
+    "traces_sample_rate": ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+  },
+  "environment": "${ENVIRONMENT:-development}"
+}
