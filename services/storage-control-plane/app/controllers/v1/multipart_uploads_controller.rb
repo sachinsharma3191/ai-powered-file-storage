@@ -2,9 +2,10 @@ require "securerandom"
 
 module V1
   class MultipartUploadsController < BaseController
-    def create
+    # Multipart upload (large objects)
+    def initiate
       bucket = bucket!
-      key = params.require(:key)
+      key = params[:key]
 
       part_size = (params[:part_size].presence || 5 * 1024 * 1024).to_i
       part_size = 5 * 1024 * 1024 if part_size < 5 * 1024 * 1024
@@ -20,38 +21,95 @@ module V1
       base_url = chunk_gateway_base_url_for!(bucket.region)
       return if performed?
 
-      render json: {
-        multipart_upload: serialize_upload(upload),
-        chunk_gateway_base_url: base_url
-      }, status: :created
-    end
+      # Generate presigned URLs for parts if requested
+      presigned_part_urls = []
+      if params[:presigned_parts].to_i > 0
+        (1..params[:presigned_parts].to_i).each do |part_number|
+          token = ScopedTokenIssuer.issue!(
+            account_id: current_account.id,
+            api_key_id: current_api_key.id,
+            region: bucket.region,
+            action: "put_part",
+            bucket: bucket.name,
+            key: key,
+            upload_id: upload.upload_id,
+            part_number: part_number
+          )
 
-    def show
-      bucket = bucket!
-      upload = bucket.multipart_uploads.find_by!(upload_id: params[:upload_id])
-
-      render json: {
-        multipart_upload: serialize_upload(upload)
-      }
-    end
-
-    def abort
-      bucket = bucket!
-      upload = bucket.multipart_uploads.find_by!(upload_id: params[:upload_id])
-
-      ActiveRecord::Base.transaction do
-        upload.update!(status: "aborted")
-        upload.multipart_parts.destroy_all
+          presigned_part_urls << {
+            part_number: part_number,
+            upload_url: "#{base_url}/v1/uploads/#{upload.upload_id}/parts/#{part_number}",
+            token: token
+          }
+        end
       end
 
       render json: {
-        multipart_upload: serialize_upload(upload)
+        bucket: bucket.name,
+        key: key,
+        upload_id: upload.upload_id,
+        part_size: part_size,
+        presigned_part_urls: presigned_part_urls,
+        ttl_seconds: ScopedTokenIssuer::DEFAULT_TTL_SECONDS
+      }, status: :created
+    end
+
+    def part_url
+      bucket = bucket!
+      key = params[:key]
+      upload_id = params.require(:upload_id)
+      part_number = params.require(:part_number).to_i
+
+      upload = bucket.multipart_uploads.find_by!(upload_id: upload_id)
+      
+      if upload.status != "initiated"
+        render json: { error: "upload_not_initiated" }, status: :bad_request
+        return
+      end
+
+      if upload.key != key
+        render json: { error: "key_mismatch" }, status: :bad_request
+        return
+      end
+
+      base_url = chunk_gateway_base_url_for!(bucket.region)
+      return if performed?
+
+      token = ScopedTokenIssuer.issue!(
+        account_id: current_account.id,
+        api_key_id: current_api_key.id,
+        region: bucket.region,
+        action: "put_part",
+        bucket: bucket.name,
+        key: key,
+        upload_id: upload_id,
+        part_number: part_number
+      )
+
+      render json: {
+        part_number: part_number,
+        upload_url: "#{base_url}/v1/uploads/#{upload_id}/parts/#{part_number}",
+        token: token,
+        ttl_seconds: ScopedTokenIssuer::DEFAULT_TTL_SECONDS
       }
     end
 
     def complete
       bucket = bucket!
-      upload = bucket.multipart_uploads.find_by!(upload_id: params[:upload_id])
+      key = params[:key]
+      upload_id = params.require(:upload_id)
+
+      upload = bucket.multipart_uploads.find_by!(upload_id: upload_id)
+      
+      if upload.status != "initiated"
+        render json: { error: "upload_not_initiated" }, status: :bad_request
+        return
+      end
+
+      if upload.key != key
+        render json: { error: "key_mismatch" }, status: :bad_request
+        return
+      end
 
       parts_param = params.require(:parts)
       unless parts_param.is_a?(Array) && parts_param.any?
@@ -67,8 +125,7 @@ module V1
           part_number: (p[:part_number] || p["part_number"]).to_i,
           etag: (p[:etag] || p["etag"]),
           checksum: (p[:checksum] || p["checksum"]),
-          size: (p[:size] || p["size"]),
-          chunk_manifest: (p[:chunk_manifest] || p["chunk_manifest"])
+          size: (p[:size] || p["size"])
         }
       end
 
@@ -86,7 +143,6 @@ module V1
             size: attrs[:size],
             etag: attrs[:etag],
             checksum: attrs[:checksum],
-            chunk_manifest: attrs[:chunk_manifest].presence || part.chunk_manifest,
             status: "uploaded"
           )
         end
@@ -101,13 +157,12 @@ module V1
               part_number: p.part_number,
               size: p.size,
               etag: p.etag,
-              checksum: p.checksum,
-              chunk_manifest: p.chunk_manifest
+              checksum: p.checksum
             }
           end
         }
 
-        storage_object = bucket.storage_objects.find_or_create_by!(key: upload.key)
+        storage_object = bucket.storage_objects.find_or_create_by!(key: key)
         version_string = SecureRandom.uuid
 
         object_version = storage_object.object_versions.create!(
@@ -127,24 +182,37 @@ module V1
 
       render json: {
         bucket: bucket.name,
-        key: upload.key,
+        key: key,
         object: serialize_object(completed_object.reload)
       }
     end
 
-    private
+    def abort
+      bucket = bucket!
+      key = params[:key]
+      upload_id = params.require(:upload_id)
 
-    def serialize_upload(u)
-      {
-        id: u.id,
-        key: u.key,
-        upload_id: u.upload_id,
-        status: u.status,
-        part_size: u.part_size,
-        initiated_by: u.initiated_by,
-        created_at: u.created_at
+      upload = bucket.multipart_uploads.find_by!(upload_id: upload_id)
+      
+      if upload.key != key
+        render json: { error: "key_mismatch" }, status: :bad_request
+        return
+      end
+
+      ActiveRecord::Base.transaction do
+        upload.update!(status: "aborted")
+        upload.multipart_parts.destroy_all
+      end
+
+      render json: {
+        bucket: bucket.name,
+        key: key,
+        upload_id: upload.upload_id,
+        status: "aborted"
       }
     end
+
+    private
 
     def serialize_object(o)
       v = o.current_version

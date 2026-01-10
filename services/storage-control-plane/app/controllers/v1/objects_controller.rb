@@ -2,6 +2,7 @@ require "securerandom"
 
 module V1
   class ObjectsController < BaseController
+    # Objects (metadata + listing)
     def index
       bucket = bucket!
       scope = bucket.storage_objects.where(deleted_marker: false)
@@ -11,38 +12,98 @@ module V1
         scope = scope.where("key LIKE ?", "#{ActiveRecord::Base.sanitize_sql_like(prefix)}%")
       end
 
-      after = params[:after].presence
-      if after
-        scope = scope.where("key > ?", after)
+      cursor = params[:cursor].presence
+      if cursor
+        scope = scope.where("key > ?", cursor)
       end
 
       limit = (params[:limit].presence || 100).to_i
       limit = 1 if limit < 1
       limit = 1000 if limit > 1000
 
-      objects = scope.includes(:current_version).order(:key).limit(limit)
+      objects = scope.includes(:current_version).order(:key).limit(limit + 1)
+      
+      has_more = objects.length > limit
+      objects = objects.first(limit) if has_more
+
+      next_cursor = objects.last&.key if has_more
 
       render json: {
         bucket: bucket.name,
-        objects: objects.map { |o| serialize_object(o) }
+        objects: objects.map { |o| serialize_object(o) },
+        cursor: next_cursor,
+        has_more: has_more
       }
     end
 
-    def show
+    def head
       bucket = bucket!
-      key = params.require(:key)
+      key = params[:key]
 
       object = bucket.storage_objects.includes(:current_version).find_by!(key: key)
+      version = params[:version].presence ? object.object_versions.find_by!(version: params[:version]) : object.current_version
 
-      render json: {
-        bucket: bucket.name,
-        object: serialize_object(object)
-      }
+      unless version
+        head :not_found
+        return
+      end
+
+      response.headers["ETag"] = version.etag if version.etag
+      response.headers["Content-Length"] = version.size.to_s if version.size
+      response.headers["X-Object-Version"] = version.version
+      response.headers["Content-Type"] = version.content_type if version.content_type
+      response.headers["Last-Modified"] = version.created_at.httpdate
+
+      head :ok
     end
 
-    def create
+    def destroy
       bucket = bucket!
-      key = params.require(:key)
+      key = params[:key]
+      version = params[:version].presence
+
+      object = bucket.storage_objects.find_by!(key: key)
+      
+      if version
+        # Delete specific version
+        target_version = object.object_versions.find_by!(version: version)
+        if target_version == object.current_version
+          # Can't delete current version if there are other versions
+          if object.object_versions.where.not(id: target_version.id).exists?
+            render json: { error: "cannot_delete_current_version" }, status: :conflict
+            return
+          end
+          # Delete the object entirely
+          object.update!(deleted_marker: true, current_version_id: nil)
+        end
+        target_version.destroy!
+      else
+        # Soft delete with versioning
+        if bucket.versioning == "enabled"
+          # Create delete marker
+          delete_marker = object.object_versions.create!(
+            version: SecureRandom.uuid,
+            content_type: "application/x-delete-marker",
+            metadata: {},
+            status: "available",
+            size: 0,
+            etag: "delete-marker"
+          )
+          object.update!(current_version_id: delete_marker.id, deleted_marker: true)
+        else
+          # Hard delete
+          object.object_versions.destroy_all
+          object.update!(deleted_marker: true, current_version_id: nil)
+        end
+      end
+
+      head :no_content
+    end
+
+    # Simple upload (small objects)
+    def init_upload
+      bucket = bucket!
+      key = params[:key]
       content_type = params[:content_type]
       metadata = params[:metadata].presence || {}
 
@@ -66,30 +127,33 @@ module V1
         region: bucket.region,
         action: "put_object",
         bucket: bucket.name,
-        key: key
+        key: key,
+        version: version_string
       )
+
+      upload_url = "#{base_url}/v1/objects/#{CGI.escape(bucket.name)}/#{CGI.escape(key)}"
 
       render json: {
         bucket: bucket.name,
         key: key,
         version: object_version.version,
-        object_version_id: object_version.id,
-        chunk_gateway_base_url: base_url,
+        upload_url: upload_url,
         token: token,
         ttl_seconds: ScopedTokenIssuer::DEFAULT_TTL_SECONDS
       }, status: :created
     end
 
-    def complete
+    def finalize_upload
       bucket = bucket!
-      key = params.require(:key)
+      key = params[:key]
       version_string = params.require(:version)
 
       storage_object = bucket.storage_objects.find_by!(key: key)
       object_version = storage_object.object_versions.find_by!(version: version_string)
 
-      size = params[:size]
-      etag = params[:etag]
+      size = params.require(:size)
+      etag = params.require(:etag)
+      checksum = params[:checksum]
       manifest = params[:manifest].presence || {}
 
       ActiveRecord::Base.transaction do
@@ -97,6 +161,7 @@ module V1
           status: "available",
           size: size,
           etag: etag,
+          checksum: checksum,
           manifest: manifest
         )
 
@@ -108,7 +173,47 @@ module V1
 
       render json: {
         bucket: bucket.name,
+        key: key,
         object: serialize_object(storage_object.reload)
+      }
+    end
+
+    # Download
+    def download_url
+      bucket = bucket!
+      key = params[:key]
+      version = params[:version].presence
+
+      object = bucket.storage_objects.find_by!(key: key)
+      target_version = version ? object.object_versions.find_by!(version: version) : object.current_version
+
+      unless target_version
+        render json: { error: "object_not_found" }, status: :not_found
+        return
+      end
+
+      base_url = chunk_gateway_base_url_for!(bucket.region)
+      return if performed?
+
+      token = ScopedTokenIssuer.issue!(
+        account_id: current_account.id,
+        api_key_id: current_api_key.id,
+        region: bucket.region,
+        action: "get_object",
+        bucket: bucket.name,
+        key: key,
+        version: target_version.version
+      )
+
+      download_url = "#{base_url}/v1/objects/#{CGI.escape(bucket.name)}/#{CGI.escape(key)}"
+
+      render json: {
+        bucket: bucket.name,
+        key: key,
+        version: target_version.version,
+        download_url: download_url,
+        token: token,
+        ttl_seconds: ScopedTokenIssuer::DEFAULT_TTL_SECONDS
       }
     end
 
@@ -131,6 +236,7 @@ module V1
         version: v.version,
         size: v.size,
         etag: v.etag,
+        checksum: v.checksum,
         content_type: v.content_type,
         metadata: v.metadata,
         status: v.status,

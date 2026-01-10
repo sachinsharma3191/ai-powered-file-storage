@@ -3,6 +3,7 @@ module V1
     ALLOWED_ACTIONS = %w[
       put_object
       get_object
+      put_part
       upload_part
     ].freeze
 

@@ -100,4 +100,64 @@ class V1::BucketsControllerTest < ActionDispatch::IntegrationTest
     
     assert_response :created
   end
+
+  test "should set bucket policy" do
+    bucket = Bucket.create!(account: @account, name: "policy-bucket", region: "us-west-2")
+    policy = {
+      "Version" => "2012-10-17",
+      "Statement" => [
+        {
+          "Effect" => "Allow",
+          "Principal" => "*",
+          "Action" => "s3:GetObject",
+          "Resource" => "arn:aws:s3:::policy-bucket/*"
+        }
+      ]
+    }
+    
+    put "/api/v1/buckets/#{bucket.name}/policy", 
+        headers: { "Authorization" => "Bearer #{@token}" },
+        params: { policy: policy }
+    
+    assert_response :success
+    json_response = JSON.parse(response.body)
+    assert_equal policy, json_response["policy"]
+  end
+
+  test "should get bucket policy" do
+    bucket = Bucket.create!(account: @account, name: "policy-bucket", region: "us-west-2")
+    policy = {
+      "Version" => "2012-10-17",
+      "Statement" => [
+        {
+          "Effect" => "Allow",
+          "Principal" => "*",
+          "Action" => "s3:GetObject",
+          "Resource" => "arn:aws:s3:::policy-bucket/*"
+        }
+      ]
+    }
+    
+    # Set policy first
+    bucket.access_policy = policy
+    bucket.save!
+    
+    get "/api/v1/buckets/#{bucket.name}/policy", 
+        headers: { "Authorization" => "Bearer #{@token}" }
+    
+    assert_response :success
+    json_response = JSON.parse(response.body)
+    assert_equal policy, json_response["policy"]
+  end
+
+  test "should return empty policy for bucket without policy" do
+    bucket = Bucket.create!(account: @account, name: "no-policy-bucket", region: "us-west-2")
+    
+    get "/api/v1/buckets/#{bucket.name}/policy", 
+        headers: { "Authorization" => "Bearer #{@token}" }
+    
+    assert_response :success
+    json_response = JSON.parse(response.body)
+    assert_equal({}, json_response["policy"])
+  end
 end

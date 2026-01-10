@@ -24,17 +24,27 @@ Rails.application.routes.draw do
     resources :api_keys, only: %i[index create]
 
     resources :buckets, param: :bucket_name, only: %i[index create show destroy] do
+      # Objects (metadata + listing)
       get "objects" => "objects#index"
-      get "objects/metadata" => "objects#show"
-      post "objects" => "objects#create"
-      post "objects/complete" => "objects#complete"
-
-      post "multipart_uploads" => "multipart_uploads#create"
-      get "multipart_uploads/:upload_id" => "multipart_uploads#show"
-      post "multipart_uploads/:upload_id/abort" => "multipart_uploads#abort"
-      post "multipart_uploads/:upload_id/complete" => "multipart_uploads#complete"
-      get "multipart_uploads/:upload_id/parts" => "multipart_parts#index"
-      put "multipart_uploads/:upload_id/parts/:part_number" => "multipart_parts#upsert"
+      head "objects/:key" => "objects#head"
+      delete "objects/:key" => "objects#destroy"
+      
+      # Simple upload (small objects)
+      post "objects/:key:init" => "objects#init_upload"
+      post "objects/:key:finalize" => "objects#finalize_upload"
+      
+      # Multipart upload (large objects)
+      post "objects/:key:multipart/initiate" => "multipart_uploads#initiate"
+      post "objects/:key:multipart/part-url" => "multipart_uploads#part_url"
+      post "objects/:key:multipart/complete" => "multipart_uploads#complete"
+      post "objects/:key:multipart/abort" => "multipart_uploads#abort"
+      
+      # Download
+      post "objects/:key:download-url" => "objects#download_url"
+      
+      # Bucket policy
+      put "policy" => "buckets#set_policy"
+      get "policy" => "buckets#get_policy"
     end
 
     post "scoped_tokens" => "scoped_tokens#create"

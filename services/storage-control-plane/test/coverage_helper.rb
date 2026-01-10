@@ -25,7 +25,7 @@ SimpleCov.start 'rails' do
   # Use simple formatter for CI/CD
   SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
     SimpleCov::Formatter::HTMLFormatter,
-    SimpleCov::JSONFormatter
+    SimpleCov::Formatter::SimpleFormatter
   ])
 end
 

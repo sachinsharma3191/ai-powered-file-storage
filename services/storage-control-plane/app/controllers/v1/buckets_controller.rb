@@ -32,13 +32,26 @@ module V1
     def destroy
       bucket = current_account.buckets.find_by!(name: params[:bucket_name])
 
-      if bucket.storage_objects.exists? || bucket.multipart_uploads.exists?
+      if bucket.storage_objects.where(deleted_marker: false).exists? || bucket.multipart_uploads.where(status: "initiated").exists?
         render json: { error: "bucket_not_empty" }, status: :conflict
         return
       end
 
       bucket.destroy!
       head :no_content
+    end
+
+    def set_policy
+      bucket = current_account.buckets.find_by!(name: params[:bucket_name])
+      policy = params.require(:policy)
+      
+      bucket.update!(access_policy: policy)
+      render json: { policy: bucket.access_policy }
+    end
+
+    def get_policy
+      bucket = current_account.buckets.find_by!(name: params[:bucket_name])
+      render json: { policy: bucket.access_policy }
     end
 
     private
@@ -50,6 +63,7 @@ module V1
         region: b.region,
         versioning: b.versioning,
         default_encryption: b.default_encryption,
+        access_policy: b.access_policy,
         created_at: b.created_at
       }
     end
