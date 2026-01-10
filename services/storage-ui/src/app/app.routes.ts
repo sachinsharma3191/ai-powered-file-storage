@@ -5,8 +5,13 @@ import { apiKeyGuard } from './guards/api-key.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'buckets',
+    redirectTo: 'multi-protocol',
     pathMatch: 'full'
+  },
+  {
+    path: 'multi-protocol',
+    loadComponent: () => import('./pages/multi-protocol-dashboard/multi-protocol-dashboard.component').then(m => m.MultiProtocolDashboardComponent),
+    canActivate: [authGuard, apiKeyGuard]
   },
   {
     path: 'setup',
