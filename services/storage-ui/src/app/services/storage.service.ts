@@ -10,6 +10,8 @@ export interface Bucket {
   default_encryption: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  lifecycleEnabled?: boolean;
+  lifecycleRules?: number;
 }
 
 export interface StorageObject {
@@ -28,6 +30,38 @@ export interface StorageObject {
     etag: string;
     status: string;
   };
+}
+
+export interface ListObjectsResponse {
+  bucket: string;
+  objects: StorageObject[];
+  common_prefixes?: string[];
+  delimiter?: string;
+  prefix?: string;
+  cursor?: string;
+  has_more: boolean;
+}
+
+export interface LifecycleRule {
+  id: string;
+  action: 'expire' | 'transition' | 'delete';
+  days: number;
+  prefix?: string;
+  storage_class?: string;
+  enabled: boolean;
+}
+
+export interface LifecyclePolicy {
+  id: number;
+  bucket_id: number;
+  enabled: boolean;
+  rules: LifecycleRule[];
+}
+
+export interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  reset: number;
 }
 
 export interface CreateObjectResponse {
@@ -61,10 +95,20 @@ export class StorageService {
     return this.http.delete<void>(`/api/v1/buckets/${name}`);
   }
 
-  listObjects(bucketName: string): Observable<StorageObject[]> {
-    return this.http.get<{objects: StorageObject[]}>(`/api/v1/buckets/${bucketName}/objects`).pipe(
-      map(response => response.objects)
-    );
+  listObjects(bucketName: string, options?: {
+  prefix?: string;
+  delimiter?: string;
+  cursor?: string;
+  limit?: number;
+}): Observable<ListObjectsResponse> {
+    const params = new URLSearchParams();
+    if (options?.prefix) params.set('prefix', options.prefix);
+    if (options?.delimiter) params.set('delimiter', options.delimiter);
+    if (options?.cursor) params.set('cursor', options.cursor);
+    if (options?.limit) params.set('limit', options.limit.toString());
+    
+    const url = `/api/v1/buckets/${bucketName}/objects${params.toString() ? '?' + params.toString() : ''}`;
+    return this.http.get<ListObjectsResponse>(url);
   }
 
   createObject(bucketName: string, key: string): Observable<CreateObjectResponse> {
@@ -80,8 +124,14 @@ export class StorageService {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/octet-stream'
-      }
-    });
+      },
+      observe: 'response'
+    }).pipe(
+      map(response => ({
+        etag: response.body?.etag || '',
+        rateLimit: this.extractRateLimitInfo(response.headers)
+      }))
+    );
   }
 
   completeUpload(bucketName: string, key: string, versionId: string, etag: string, size: number): Observable<StorageObject> {
@@ -89,5 +139,29 @@ export class StorageService {
       `/api/v1/buckets/${bucketName}/objects/${encodeURIComponent(key)}/complete`,
       { version_id: versionId, etag, size }
     );
+  }
+
+  // Lifecycle Policy Methods
+  getLifecyclePolicy(bucketName: string): Observable<LifecyclePolicy> {
+    return this.http.get<LifecyclePolicy>(`/api/v1/buckets/${bucketName}/lifecycle`);
+  }
+
+  setLifecyclePolicy(bucketName: string, policy: LifecyclePolicy): Observable<LifecyclePolicy> {
+    return this.http.put<LifecyclePolicy>(`/api/v1/buckets/${bucketName}/lifecycle`, policy);
+  }
+
+  deleteLifecyclePolicy(bucketName: string): Observable<void> {
+    return this.http.delete<void>(`/api/v1/buckets/${bucketName}/lifecycle`);
+  }
+
+  // Rate Limit Helper
+  private extractRateLimitInfo(headers: any): RateLimitInfo | null {
+    if (!headers) return null;
+    
+    return {
+      limit: parseInt(headers.get('X-RateLimit-Limit') || '0'),
+      remaining: parseInt(headers.get('X-RateLimit-Remaining') || '0'),
+      reset: parseInt(headers.get('X-RateLimit-Reset') || '0')
+    };
   }
 }

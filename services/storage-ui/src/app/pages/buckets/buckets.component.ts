@@ -1,19 +1,23 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { StorageService, Bucket } from '../../services/storage.service';
+import { StorageService, Bucket, RateLimitInfo } from '../../services/storage.service';
 import { DatePipe } from '@angular/common';
+import { RateLimitStatusComponent } from '../../components/rate-limit-status/rate-limit-status.component';
 
 @Component({
   selector: 'app-buckets',
   standalone: true,
-  imports: [RouterLink, FormsModule, DatePipe],
+  imports: [RouterLink, FormsModule, DatePipe, RateLimitStatusComponent],
   template: `
     <div class="space-y-6">
+      <!-- Rate Limit Status -->
+      <app-rate-limit-status [rateLimitInfo]="rateLimitInfo()"></app-rate-limit-status>
+
       <div class="flex justify-between items-center">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Folders</h1>
-          <p class="text-gray-600">Manage your storage folders</p>
+          <p class="text-gray-600">Manage your storage folders and lifecycle policies</p>
         </div>
         <button (click)="showCreateModal.set(true)" class="btn-primary flex items-center gap-2">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -45,6 +49,7 @@ import { DatePipe } from '@angular/common';
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Versioning</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lifecycle Policy</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -64,13 +69,34 @@ import { DatePipe } from '@angular/common';
                       {{ bucket.versioning }}
                     </span>
                   </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    @if (bucket.lifecycleEnabled) {
+                      <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                        Active ({{ bucket.lifecycleRules || 0 }} rules)
+                      </span>
+                    } @else {
+                      <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium">
+                        Not configured
+                      </span>
+                    }
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">
                     {{ bucket.created_at | date:'medium' }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <button (click)="deleteBucket(bucket)" class="text-red-600 hover:text-red-700 text-sm font-medium">
-                      Delete
-                    </button>
+                    <div class="flex justify-end space-x-2">
+                      <a [routerLink]="['/buckets', bucket.name, 'lifecycle']" 
+                         class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        Lifecycle
+                      </a>
+                      <a [routerLink]="['/buckets', bucket.name]" 
+                         class="text-green-600 hover:text-green-700 text-sm font-medium">
+                        Browse
+                      </a>
+                      <button (click)="deleteBucket(bucket)" class="text-red-600 hover:text-red-700 text-sm font-medium">
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               }
@@ -128,24 +154,41 @@ export class BucketsComponent implements OnInit {
   showCreateModal = signal(false);
   creating = signal(false);
   createError = signal('');
+  rateLimitInfo = signal<RateLimitInfo | null>(null);
 
   newBucketName = '';
   newBucketRegion = 'us-west-2';
 
   ngOnInit(): void {
     this.loadBuckets();
+    this.loadRateLimitInfo();
   }
 
   loadBuckets(): void {
     this.loading.set(true);
     this.storageService.listBuckets().subscribe({
       next: (buckets) => {
-        this.buckets.set(buckets);
+        // Add mock lifecycle data for now (would come from API)
+        const bucketsWithLifecycle = buckets.map(bucket => ({
+          ...bucket,
+          lifecycleEnabled: Math.random() > 0.7, // Mock: 30% have lifecycle
+          lifecycleRules: Math.floor(Math.random() * 5) // Mock: 0-4 rules
+        }));
+        this.buckets.set(bucketsWithLifecycle);
         this.loading.set(false);
       },
       error: () => {
         this.loading.set(false);
       }
+    });
+  }
+
+  loadRateLimitInfo(): void {
+    // Mock rate limit info for now
+    this.rateLimitInfo.set({
+      limit: 1000,
+      remaining: 847,
+      reset: 245
     });
   }
 

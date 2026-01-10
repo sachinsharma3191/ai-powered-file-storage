@@ -28,7 +28,17 @@ export const routes: Routes = [
   },
   {
     path: 'buckets/:bucketName',
-    loadComponent: () => import('./pages/objects/objects.component').then(m => m.ObjectsComponent),
+    loadComponent: () => import('./components/bucket-objects/bucket-objects.component').then(m => m.BucketObjectsComponent),
+    canActivate: [authGuard, apiKeyGuard]
+  },
+  {
+    path: 'buckets/:bucketName/browse/:path',
+    loadComponent: () => import('./components/bucket-objects/bucket-objects.component').then(m => m.BucketObjectsComponent),
+    canActivate: [authGuard, apiKeyGuard]
+  },
+  {
+    path: 'buckets/:bucketName/lifecycle',
+    loadComponent: () => import('./components/lifecycle-policy/lifecycle-policy.component').then(m => m.LifecyclePolicyComponent),
     canActivate: [authGuard, apiKeyGuard]
   },
     {

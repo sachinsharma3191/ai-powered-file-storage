@@ -247,6 +247,27 @@ class EventEmitter
       publish_event('lifecycle-events', event)
     end
     
+    # Emit lifecycle policy changed event
+    def emit_lifecycle_policy_changed(bucket:, account_id:, old_policy:, new_policy:, region: nil)
+      event = {
+        event_id: SecureRandom.uuid,
+        event_type: 'LifecyclePolicyChanged',
+        timestamp: Time.current.iso8601,
+        account_id: account_id,
+        region: region,
+        bucket_name: bucket.name,
+        old_policy: old_policy,
+        new_policy: new_policy,
+        metadata: {
+          service: 'storage-control-plane',
+          ruby_version: Rails.version,
+          environment: Rails.env
+        }
+      }
+      
+      publish_event('lifecycle-events', event)
+    end
+    
     # Emit access denied event
     def emit_access_denied(account_id:, bucket_name: nil, object_key: nil, user_id: nil, ip_address: nil, user_agent: nil, error_message: nil, request_id: nil, region: nil)
       event = {

@@ -45,6 +45,12 @@ Rails.application.routes.draw do
       # Bucket policy
       put "policy" => "buckets#set_policy"
       get "policy" => "buckets#get_policy"
+      
+      # Bucket lifecycle policies
+      get "lifecycle" => "lifecycle_policies#show"
+      put "lifecycle" => "lifecycle_policies#update"
+      delete "lifecycle" => "lifecycle_policies#destroy"
+      post "lifecycle/apply" => "lifecycle_policies#apply"
     end
 
     post "scoped_tokens" => "scoped_tokens#create"
