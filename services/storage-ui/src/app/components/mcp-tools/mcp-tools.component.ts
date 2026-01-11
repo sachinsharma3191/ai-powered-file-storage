@@ -526,6 +526,7 @@ export class McpToolsComponent implements OnInit, OnDestroy {
     options?: string[];
   }> = [];
   
+  toolArguments: Record<string, any> = {};
   toolResult: MCPToolResult | null = null;
   showAIModal: boolean = false;
   
