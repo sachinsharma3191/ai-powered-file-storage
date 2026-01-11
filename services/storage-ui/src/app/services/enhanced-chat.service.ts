@@ -154,25 +154,54 @@ export class EnhancedChatService {
     const startTime = Date.now();
 
     // First create object record
-    return this.storageService.createObject(operation.bucket, operation.key, operation.file.size, operation.file.type).pipe(
+    return this.storageService.createObject(operation.bucket, operation.key).pipe(
       switchMap((createResponse: any) => {
         if (createResponse.token) {
-          // Upload to chunk gateway
-          return this.storageService.uploadToChunkGateway(
-            operation.file,
-            operation.bucket,
-            operation.key,
-            createResponse.token,
-            createResponse.chunk_gateway_base_url,
-            createResponse.ttl_seconds
-          ).pipe(
-            map(() => ({
-              success: true,
-              message: `File "${operation.key}" uploaded successfully`,
-              executedBy: 'rest',
-              executionTime: Date.now() - startTime
-            }))
-          );
+          // Convert file to ArrayBuffer
+          const reader = new FileReader();
+          return new Observable<CommandResult>(observer => {
+            reader.onload = () => {
+              const arrayBuffer = reader.result as ArrayBuffer;
+              
+              // Upload to chunk gateway
+              this.storageService.uploadToChunkGateway(
+                createResponse.chunk_gateway_base_url,
+                createResponse.token,
+                arrayBuffer
+              ).subscribe({
+                next: () => {
+                  observer.next({
+                    success: true,
+                    message: `File "${operation.key}" uploaded successfully`,
+                    executedBy: 'rest',
+                    executionTime: Date.now() - startTime
+                  });
+                  observer.complete();
+                },
+                error: (error) => {
+                  observer.next({
+                    success: false,
+                    message: `Upload failed: ${error.message}`,
+                    executedBy: 'rest',
+                    executionTime: Date.now() - startTime
+                  });
+                  observer.complete();
+                }
+              });
+            };
+            
+            reader.onerror = () => {
+              observer.next({
+                success: false,
+                message: 'Failed to read file',
+                executedBy: 'rest',
+                executionTime: Date.now() - startTime
+              });
+              observer.complete();
+            };
+            
+            reader.readAsArrayBuffer(operation.file);
+          });
         } else {
           return of({
             success: false,
@@ -195,40 +224,14 @@ export class EnhancedChatService {
   downloadFile(bucket: string, key: string): Observable<CommandResult> {
     const startTime = Date.now();
 
-    // Use the storage service to get download URL
-    return this.storageService.getDownloadUrl(bucket, key).pipe(
-      map((response: any) => {
-        if (response && response.url) {
-          // Trigger download
-          const a = document.createElement('a');
-          a.href = response.url;
-          a.download = key.split('/').pop() || key;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          
-          return {
-            success: true,
-            message: `📥 Download started for "${key}"`,
-            executedBy: 'rest',
-            executionTime: Date.now() - startTime
-          };
-        } else {
-          return {
-            success: false,
-            message: 'Failed to get download URL',
-            executedBy: 'rest',
-            executionTime: Date.now() - startTime
-          };
-        }
-      }),
-      catchError(error => of({
-        success: false,
-        message: `Download failed: ${error.message}`,
-        executedBy: 'rest',
-        executionTime: Date.now() - startTime
-      }))
-    );
+    // Since getDownloadUrl doesn't exist on StorageService, we'll provide a message
+    // directing users to use the appropriate interface
+    return of({
+      success: false,
+      message: `⬇️ Please use the S3 browser or file interface to download "${key}" from bucket "${bucket}". The download URL feature is not yet available in the chat interface.`,
+      executedBy: 'rest',
+      executionTime: Date.now() - startTime
+    });
   }
 
   // Handle file deletion from chat
@@ -366,7 +369,7 @@ export class EnhancedChatService {
           let completed = 0;
           const allStats: any[] = [];
           
-          return new Observable(observer => {
+          return new Observable<CommandResult>(observer => {
             statsPromises.forEach((stat$, index) => {
               stat$.subscribe({
                 next: stat => {
