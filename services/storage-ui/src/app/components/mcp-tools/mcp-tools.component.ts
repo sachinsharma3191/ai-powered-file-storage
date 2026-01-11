@@ -585,7 +585,7 @@ export class McpToolsComponent implements OnInit, OnDestroy {
     value: any;
     options?: string[];
   }> {
-    const params = [];
+    const params: any[] = [];
     const properties = tool.inputSchema.properties || {};
     const required = tool.inputSchema.required || [];
 
@@ -614,26 +614,20 @@ export class McpToolsComponent implements OnInit, OnDestroy {
 
   canExecuteTool(): boolean {
     if (!this.selectedTool) return false;
-    
-    return this.toolParameters.every(param => {
-      if (param.required) {
-        return param.value !== null && param.value !== '' && param.value !== undefined;
-      }
-      return true;
-    });
-  }
-
   executeTool(): void {
-    if (!this.selectedTool || !this.canExecuteTool()) return;
+    if (!this.selectedTool || !this.mcpService) return;
 
-    const arguments: Record<string, any> = {};
-    this.toolParameters.forEach(param => {
-      if (param.value !== null && param.value !== '' && param.value !== undefined) {
-        arguments[param.key] = param.value;
+    const toolArgs: Record<string, any> = {};
+    // Collect arguments from the form
+    if (this.selectedTool.inputSchema && this.selectedTool.inputSchema.properties) {
+      for (const [key, schema] of Object.entries(this.selectedTool.inputSchema.properties)) {
+        const value = this.toolArguments[key];
+        if (value !== undefined && value !== '') {
+          toolArgs[key] = value;
+        }
       }
-    });
-
-    const sub = this.mcpService.callTool(this.selectedTool.name, arguments).subscribe({
+    }
+    const sub = this.mcpService.callTool(this.selectedTool.name, toolArgs).subscribe({
       next: (result) => {
         this.toolResult = result;
       },

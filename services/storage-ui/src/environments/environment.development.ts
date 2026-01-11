@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: process.env['NG_APP_API_URL'] || 'http://localhost:3000'
+  apiUrl: (typeof process !== 'undefined' && process.env?.['NG_APP_API_URL']) || 'http://localhost:3000'
 };

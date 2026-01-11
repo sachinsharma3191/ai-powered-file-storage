@@ -80,13 +80,13 @@ export interface ProtocolConfig {
         <h6>📋 {{ getSelectedProtocolName() }} Details</h6>
         <div class="details-content">
           <div class="detail-section">
-            <h7>Use Cases</h7>
+            <h6>Use Cases</h6>
             <ul>
               <li *ngFor="let useCase of getSelectedProtocolUseCases()">{{ useCase }}</li>
             </ul>
           </div>
           <div class="detail-section">
-            <h7>Configuration</h7>
+            <h6>Configuration</h6>
             <div class="config-form">
               <div *ngIf="selectedProtocol === 's3'" class="config-group">
                 <label>AWS Access Key ID</label>

@@ -200,7 +200,7 @@ export class EnhancedChatService {
               observer.complete();
             };
             
-            reader.readAsArrayBuffer(operation.file);
+            reader.readAsArrayBuffer(operation.file!);
           });
         } else {
           return of({

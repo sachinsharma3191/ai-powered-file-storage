@@ -208,12 +208,12 @@ export class McpService {
   }
 
   // Generic MCP operations
-  callTool(name: string, arguments: Record<string, any>): Observable<MCPToolResult> {
+  callTool(name: string, toolArgs: Record<string, any>): Observable<MCPToolResult> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
 
-    return this.http.post<MCPToolResult>(`${this.baseUrl}/tools/${name}/call`, arguments, { headers }).pipe(
+    return this.http.post<MCPToolResult>(`${this.baseUrl}/tools/${name}/call`, toolArgs, { headers }).pipe(
       catchError(error => {
         console.error('MCP Tool Call Error:', error);
         return [{
