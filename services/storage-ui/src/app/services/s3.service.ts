@@ -1,27 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-
-export interface S3Bucket {
-  Name: string;
-  CreationDate: string;
-}
-
-export interface S3Object {
-  Key: string;
-  LastModified: string;
-  ETag: string;
-  Size: number;
-  StorageClass: string;
-  Owner: {
-    ID: string;
-    DisplayName: string;
-  };
-}
-
-export interface S3ListBucketsResponse {
-  ListAllMyBucketsResult: {
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import { BackendIntegrationService } from './backend-integration.service';
     Owner: {
       ID: string;
       DisplayName: string;
@@ -68,9 +50,16 @@ export interface S3CompleteMultipartResponse {
   providedIn: 'root'
 })
 export class S3Service {
-  private baseUrl = '/s3';
+  private baseUrl: string;
   
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private backendIntegration: BackendIntegrationService
+  ) {
+    // Use backend integration for service discovery
+    const serviceUrls = this.backendIntegration.getServiceUrls();
+    this.baseUrl = serviceUrls.s3ApiUrl;
+  }
 
   private getHeaders(): HttpHeaders {
     // Get credentials from storage or environment

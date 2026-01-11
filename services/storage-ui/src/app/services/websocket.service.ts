@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
+import { BackendIntegrationService } from './backend-integration.service';
 
 export interface StorageEvent {
   type: string;
@@ -20,16 +21,21 @@ export class WebsocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
+  private websocketUrl: string;
 
-  constructor() {}
+  constructor(private backendIntegration: BackendIntegrationService) {
+    // Use backend integration for service discovery
+    const serviceUrls = this.backendIntegration.getServiceUrls();
+    this.websocketUrl = serviceUrls.websocketUrl;
+  }
 
   connect(token: string, bucketId?: number): void {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/cable?token=${token}`;
+    // Use the configured WebSocket URL from backend integration
+    const wsUrl = `${this.websocketUrl}?token=${token}`;
     
     this.socket = new WebSocket(wsUrl);
 

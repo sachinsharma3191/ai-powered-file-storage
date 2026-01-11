@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { BackendIntegrationService } from './backend-integration.service';
 
 export interface Bucket {
   id: number;
@@ -79,7 +80,15 @@ export interface CreateObjectResponse {
   providedIn: 'root'
 })
 export class StorageService {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private backendIntegration: BackendIntegrationService
+  ) {
+    // Use backend integration for service discovery
+    this.serviceUrls = this.backendIntegration.getServiceUrls();
+  }
+
+  private serviceUrls: Record<string, string>;
 
   listBuckets(): Observable<Bucket[]> {
     return this.http.get<{buckets: Bucket[]}>('/api/v1/buckets').pipe(
@@ -107,16 +116,16 @@ export class StorageService {
     if (options?.cursor) params.set('cursor', options.cursor);
     if (options?.limit) params.set('limit', options.limit.toString());
     
-    const url = `/api/v1/buckets/${bucketName}/objects${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${this.serviceUrls.apiUrl}/api/v1/buckets/${bucketName}/objects${params.toString() ? '?' + params.toString() : ''}`;
     return this.http.get<ListObjectsResponse>(url);
   }
 
   createObject(bucketName: string, key: string): Observable<CreateObjectResponse> {
-    return this.http.post<CreateObjectResponse>(`/api/v1/buckets/${bucketName}/objects`, { key });
+    return this.http.post<CreateObjectResponse>(`${this.serviceUrls.apiUrl}/api/v1/buckets/${bucketName}/objects`, { key });
   }
 
   deleteObject(bucketName: string, key: string): Observable<void> {
-    return this.http.delete<void>(`/api/v1/buckets/${bucketName}/objects/${encodeURIComponent(key)}`);
+    return this.http.delete<void>(`${this.serviceUrls.apiUrl}/api/v1/buckets/${bucketName}/objects/${encodeURIComponent(key)}`);
   }
 
   uploadToChunkGateway(gatewayUrl: string, token: string, data: ArrayBuffer): Observable<{ etag: string; rateLimit?: RateLimitInfo }> {

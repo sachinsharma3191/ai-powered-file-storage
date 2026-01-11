@@ -91,8 +91,35 @@ services:
         condition: service_healthy
     ports:
       - "4200:80"
+    environment:
+      NG_APP_API_URL: http://localhost:3000
+      NG_APP_MCP_URL: http://localhost:8080
+      NG_APP_WEBSOCKET_URL: ws://localhost:3000/cable
+      NG_APP_CHUNK_GATEWAY_URL: http://localhost:4000
+      NG_APP_NOTIFICATION_URL: http://localhost:9170
+      NG_APP_AGENT_URL: http://localhost:6000
+      NG_APP_S3_API_URL: http://localhost:3000/s3
+      NG_APP_OUTBOX_URL: http://localhost:7000
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mcp-server:
+    build:
+      context: ./services/mcp-server
+    depends_on:
+      storage-control-plane:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      RUST_LOG: info
+      DATABASE_URL: postgres://storage_control_plane:storage_control_plane@postgres:5432/storage_control_plane_production
+      STORAGE_API_URL: http://storage-control-plane:80
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

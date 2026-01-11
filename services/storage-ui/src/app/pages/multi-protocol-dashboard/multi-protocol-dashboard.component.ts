@@ -7,6 +7,7 @@ import { McpToolsComponent } from '../../components/mcp-tools/mcp-tools.componen
 import { RealTimeNotificationsComponent } from '../../components/real-time-notifications/real-time-notifications.component';
 import { BucketObjectsComponent } from '../../components/bucket-objects/bucket-objects.component';
 import { ChatInterfaceComponent } from '../../components/chat-interface/chat-interface.component';
+import { BackendStatusComponent } from '../../components/backend-status/backend-status.component';
 
 @Component({
   selector: 'app-multi-protocol-dashboard',
@@ -19,7 +20,8 @@ import { ChatInterfaceComponent } from '../../components/chat-interface/chat-int
     McpToolsComponent,
     RealTimeNotificationsComponent,
     BucketObjectsComponent,
-    ChatInterfaceComponent
+    ChatInterfaceComponent,
+    BackendStatusComponent
   ],
   template: `
     <div class="multi-protocol-dashboard">
@@ -27,6 +29,9 @@ import { ChatInterfaceComponent } from '../../components/chat-interface/chat-int
         <h2>🌐 Multi-Protocol Storage Dashboard</h2>
         <p class="text-muted">Manage your storage using multiple protocols and interfaces</p>
       </div>
+
+      <!-- Backend Services Status -->
+      <app-backend-status></app-backend-status>
 
       <!-- Protocol Configuration Section -->
       <div class="protocol-section">
