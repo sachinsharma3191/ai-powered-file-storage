@@ -614,6 +614,23 @@ export class McpToolsComponent implements OnInit, OnDestroy {
 
   canExecuteTool(): boolean {
     if (!this.selectedTool) return false;
+    
+    // Check if all required arguments are provided
+    if (!this.selectedTool.inputSchema || !this.selectedTool.inputSchema.properties) {
+      return true; // No arguments required
+    }
+    
+    const required = this.selectedTool.inputSchema.required || [];
+    for (const requiredArg of required) {
+      const value = this.toolArguments[requiredArg];
+      if (value === undefined || value === '') {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
   executeTool(): void {
     if (!this.selectedTool || !this.mcpService) return;
 
