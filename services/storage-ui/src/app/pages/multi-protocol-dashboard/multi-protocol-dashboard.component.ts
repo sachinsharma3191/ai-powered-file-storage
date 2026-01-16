@@ -8,6 +8,10 @@ import { RealTimeNotificationsComponent } from '../../components/real-time-notif
 import { BucketObjectsComponent } from '../../components/bucket-objects/bucket-objects.component';
 import { ChatInterfaceComponent } from '../../components/chat-interface/chat-interface.component';
 import { BackendStatusComponent } from '../../components/backend-status/backend-status.component';
+import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
+import { LifecyclePolicyComponent } from '../../components/lifecycle-policy/lifecycle-policy.component';
+import { RateLimitStatusComponent } from '../../components/rate-limit-status/rate-limit-status.component';
+import { FeaturesOverviewComponent } from '../../components/features-overview/features-overview.component';
 
 @Component({
   selector: 'app-multi-protocol-dashboard',
@@ -21,7 +25,11 @@ import { BackendStatusComponent } from '../../components/backend-status/backend-
     RealTimeNotificationsComponent,
     BucketObjectsComponent,
     ChatInterfaceComponent,
-    BackendStatusComponent
+    BackendStatusComponent,
+    FileUploadComponent,
+    LifecyclePolicyComponent,
+    RateLimitStatusComponent,
+    FeaturesOverviewComponent
   ],
   template: `
     <div class="multi-protocol-dashboard">
@@ -29,6 +37,9 @@ import { BackendStatusComponent } from '../../components/backend-status/backend-
         <h2>🌐 Multi-Protocol Storage Dashboard</h2>
         <p class="text-muted">Manage your storage using multiple protocols and interfaces</p>
       </div>
+
+      <!-- Features Overview -->
+      <app-features-overview></app-features-overview>
 
       <!-- Backend Services Status -->
       <app-backend-status></app-backend-status>
@@ -177,6 +188,154 @@ import { BackendStatusComponent } from '../../components/backend-status/backend-
                     <div class="mt-3">
                       <h6>🔗 Connection Info</h6>
                       <code>ws://localhost:3000/cable?token=YOUR_TOKEN</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </tab>
+
+          <!-- File Management Tab -->
+          <tab heading="📁 File Management" [disabled]="!isProtocolEnabled('rest')">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h5>Advanced File Operations</h5>
+                <p class="text-muted">Upload, manage, and organize your files with advanced features</p>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-8">
+                  <app-file-upload></app-file-upload>
+                </div>
+                <div class="col-lg-4">
+                  <div class="file-info-card">
+                    <h6>📊 Upload Features</h6>
+                    <ul>
+                      <li>🚀 Multipart upload for large files</li>
+                      <li>📈 Progress tracking</li>
+                      <li>🔄 Resume interrupted uploads</li>
+                      <li>📋 Batch file operations</li>
+                      <li>🔐 Secure chunked uploads</li>
+                    </ul>
+                    
+                    <div class="mt-3">
+                      <h6>💡 Tips</h6>
+                      <small class="text-muted">
+                        • Drag & drop files directly<br>
+                        • Use Ctrl+click for multiple selection<br>
+                        • Large files are automatically chunked<br>
+                        • Upload progress is saved in browser
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </tab>
+
+          <!-- Lifecycle Management Tab -->
+          <tab heading="🔄 Lifecycle Management" [disabled]="!isProtocolEnabled('rest')">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h5>Storage Lifecycle Policies</h5>
+                <p class="text-muted">Automate file management with intelligent lifecycle rules</p>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-8">
+                  <app-lifecycle-policy></app-lifecycle-policy>
+                </div>
+                <div class="col-lg-4">
+                  <div class="lifecycle-info-card">
+                    <h6>🔄 Automation Features</h6>
+                    <ul>
+                      <li>📅 Time-based transitions</li>
+                      <li>❄️ Cold storage migration</li>
+                      <li>🗑️ Automatic deletion</li>
+                      <li>📊 Cost optimization</li>
+                      <li>🔧 Custom rules</li>
+                    </ul>
+                    
+                    <div class="mt-3">
+                      <h6>💰 Cost Savings</h6>
+                      <small class="text-muted">
+                        • Move old files to cheaper storage<br>
+                        • Delete temporary files automatically<br>
+                        • Optimize storage tiers<br>
+                        • Reduce manual management
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </tab>
+
+          <!-- Monitoring & Analytics Tab -->
+          <tab heading="📊 Monitoring">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h5>System Monitoring & Analytics</h5>
+                <p class="text-muted">Monitor performance, usage, and system health</p>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="monitoring-card">
+                    <h6>📈 Usage Analytics</h6>
+                    <div class="analytics-placeholder">
+                      <div class="stat-item">
+                        <span class="stat-label">Total Storage</span>
+                        <span class="stat-value">2.4 TB</span>
+                      </div>
+                      <div class="stat-item">
+                        <span class="stat-label">File Count</span>
+                        <span class="stat-value">15,234</span>
+                      </div>
+                      <div class="stat-item">
+                        <span class="stat-label">API Calls</span>
+                        <span class="stat-value">45.2K/day</span>
+                      </div>
+                      <div class="stat-item">
+                        <span class="stat-label">Active Users</span>
+                        <span class="stat-value">128</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="monitoring-card">
+                    <h6>⚡ Rate Limiting</h6>
+                    <app-rate-limit-status></app-rate-limit-status>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row mt-4">
+                <div class="col-12">
+                  <div class="monitoring-card">
+                    <h6>🔍 System Health</h6>
+                    <div class="health-grid">
+                      <div class="health-item">
+                        <span class="health-indicator healthy"></span>
+                        <span class="health-label">API Response Time</span>
+                        <span class="health-value">45ms</span>
+                      </div>
+                      <div class="health-item">
+                        <span class="health-indicator healthy"></span>
+                        <span class="health-label">Database Connections</span>
+                        <span class="health-value">12/20</span>
+                      </div>
+                      <div class="health-item">
+                        <span class="health-indicator warning"></span>
+                        <span class="health-label">Storage Usage</span>
+                        <span class="health-value">78%</span>
+                      </div>
+                      <div class="health-item">
+                        <span class="health-indicator healthy"></span>
+                        <span class="health-label">Queue Length</span>
+                        <span class="health-value">23</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -496,6 +655,125 @@ import { BackendStatusComponent } from '../../components/backend-status/backend-
       
       .comparison-table {
         font-size: 12px;
+      }
+    }
+
+    /* New Feature Components Styles */
+    .file-info-card,
+    .lifecycle-info-card,
+    .monitoring-card {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+      height: 100%;
+    }
+
+    .file-info-card h6,
+    .lifecycle-info-card h6,
+    .monitoring-card h6 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .file-info-card ul,
+    .lifecycle-info-card ul {
+      margin: 0 0 16px 0;
+      padding-left: 20px;
+    }
+
+    .file-info-card li,
+    .lifecycle-info-card li {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #495057;
+    }
+
+    .analytics-placeholder {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #6c757d;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .health-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .health-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .health-indicator.healthy {
+      background: #28a745;
+    }
+
+    .health-indicator.warning {
+      background: #ffc107;
+    }
+
+    .health-indicator.error {
+      background: #dc3545;
+    }
+
+    .health-label {
+      flex: 1;
+      font-size: 14px;
+      color: #495057;
+      font-weight: 500;
+    }
+
+    .health-value {
+      font-size: 14px;
+      color: #6c757d;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .analytics-placeholder {
+        grid-template-columns: 1fr;
+      }
+      
+      .health-grid {
+        grid-template-columns: 1fr;
       }
     }
   `]
