@@ -7,6 +7,7 @@ use crate::errors::ApiError;
 
 #[derive(Debug, Deserialize)]
 pub struct Claims {
+    pub sub: String,
     pub act: Option<String>,
     pub bucket: Option<String>,
     pub key: Option<String>,

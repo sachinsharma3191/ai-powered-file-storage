@@ -6,6 +6,7 @@ use axum::{
     Json,
 };
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::auth::Claims;
 use crate::errors::{ApiError, Result};

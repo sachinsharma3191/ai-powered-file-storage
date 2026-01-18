@@ -38,11 +38,6 @@ proptest = "1.4"
 quickcheck = "1.0"
 quickcheck_macros = "1.0"
 
-# Database and external services
-redis = { version = "0.24", features = ["tokio-comp", "json"] }
-testcontainers = "0.15"
-testcontainers-modules = { version = "0.15", features = ["redis", "kafka"] }
-
 # HTTP testing
 reqwest = { version = "0.11", features = ["json"] }
 
@@ -58,18 +53,3 @@ dotenvy = "0.15"
 
 # Performance testing
 criterion = { version = "0.5", features = ["html_reports"] }
-
-# Code coverage
-tarpaulin = "0.27"
-
-[[bench]]
-name = "chunking"
-harness = false
-
-[[bench]]
-name = "storage"
-harness = false
-
-[[bench]]
-name = "auth"
-harness = false

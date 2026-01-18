@@ -12,7 +12,7 @@ FROM debian:bookworm-slim
 
 RUN apt-get update -qq && apt-get install --no-install-recommends -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/target/release/chunk-gateway /usr/local/bin/chunk-gateway
+COPY --from=build /app/target/release/ai-powered-file-storage-chunk-gateway /usr/local/bin/chunk-gateway
 
 ENV BIND_ADDR=0.0.0.0
 ENV PORT=4000

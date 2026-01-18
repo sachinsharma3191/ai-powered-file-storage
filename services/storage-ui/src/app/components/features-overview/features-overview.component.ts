@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-features-overview',
   standalone: true,
+  imports: [CommonModule],
   template: `
     <div class="features-overview">
       <div class="features-header">

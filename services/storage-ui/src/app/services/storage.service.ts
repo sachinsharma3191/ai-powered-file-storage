@@ -116,20 +116,20 @@ export class StorageService {
     if (options?.cursor) params.set('cursor', options.cursor);
     if (options?.limit) params.set('limit', options.limit.toString());
     
-    const url = `${this.serviceUrls.apiUrl}/api/v1/buckets/${bucketName}/objects${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${this.serviceUrls['apiUrl']}/api/v1/buckets/${bucketName}/objects${params.toString() ? '?' + params.toString() : ''}`;
     return this.http.get<ListObjectsResponse>(url);
   }
 
   createObject(bucketName: string, key: string): Observable<CreateObjectResponse> {
-    return this.http.post<CreateObjectResponse>(`${this.serviceUrls.apiUrl}/api/v1/buckets/${bucketName}/objects`, { key });
+    return this.http.post<CreateObjectResponse>(`${this.serviceUrls['apiUrl']}/api/v1/buckets/${bucketName}/objects`, { key });
   }
 
   deleteObject(bucketName: string, key: string): Observable<void> {
-    return this.http.delete<void>(`${this.serviceUrls.apiUrl}/api/v1/buckets/${bucketName}/objects/${encodeURIComponent(key)}`);
+    return this.http.delete<void>(`${this.serviceUrls['apiUrl']}/api/v1/buckets/${bucketName}/objects/${encodeURIComponent(key)}`);
   }
 
-  uploadToChunkGateway(gatewayUrl: string, token: string, data: ArrayBuffer): Observable<{ etag: string; rateLimit?: RateLimitInfo }> {
-    return this.http.put<{ etag: string }>(gatewayUrl, data, {
+  uploadToChunkGateway(gatewayUrl: string, token: string, data: ArrayBuffer): Observable<{ etag: string; rateLimit?: RateLimitInfo | null }> {
+    return this.http.put<{ etag: string; rateLimit?: RateLimitInfo | null }>(gatewayUrl, data, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/octet-stream'

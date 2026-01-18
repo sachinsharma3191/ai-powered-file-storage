@@ -1,4 +1,6 @@
 class ObjectVersion < ApplicationRecord
+  include Searchable
+  
   belongs_to :storage_object
 
   validates :version, presence: true, uniqueness: { scope: :storage_object_id }

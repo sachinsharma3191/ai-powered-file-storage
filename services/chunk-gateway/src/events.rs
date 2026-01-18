@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
+use tracing::{info, warn};
+use redis::{Client, AsyncCommands};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadEvent {
@@ -21,6 +23,7 @@ pub struct DownloadEvent {
     pub metadata: HashMap<String, serde_json::Value>,
 }
 
+#[derive(Clone)]
 pub struct EventService {
     redis_client: Option<redis::Client>,
     config: EventConfig,
@@ -104,7 +107,7 @@ impl EventService {
                 "retry_count": 0,
                 "max_retries": 3,
                 "dead_letter": false,
-                "processed_at": null::<String>
+                "processed_at": Option::<String>::None
             });
 
             let _: String = conn
@@ -113,16 +116,16 @@ impl EventService {
                     "*",
                     &[
                         ("data", serde_json::to_string(&wrapped_event)?),
-                        ("event_id", &event.event_id),
-                        ("event_type", &event.event_type),
-                        ("timestamp", &event.timestamp.to_rfc3339()),
+                        ("event_id", event.event_id.clone()),
+                        ("event_type", event.event_type.clone()),
+                        ("timestamp", event.timestamp.to_rfc3339()),
                     ],
                 )
                 .await?;
 
-            log::info!("Event published: {} ({})", event.event_type, event.event_id);
+            info!("Event published: {} ({})", event.event_type, event.event_id);
         } else {
-            log::warn!("Event service disabled, skipping event publication");
+            warn!("Event service disabled, skipping event publication");
         }
 
         Ok(())

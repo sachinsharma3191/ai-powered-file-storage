@@ -5,12 +5,13 @@ import { takeUntil } from 'rxjs/operators';
 import { StorageService, ListObjectsResponse, StorageObject, RateLimitInfo } from '../../services/storage.service';
 import { FileSecurityService, FileSecurityResult } from '../../services/file-security.service';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { FileUploadComponent } from '../file-upload/file-upload.component';
 
 @Component({
   selector: 'app-bucket-objects',
   standalone: true,
-  imports: [CommonModule, FileUploadComponent],
+  imports: [CommonModule, FormsModule, FileUploadComponent],
   template: `
     <div class="bucket-objects">
       <!-- Breadcrumb Navigation -->

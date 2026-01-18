@@ -12,6 +12,8 @@ import { FileUploadComponent } from '../../components/file-upload/file-upload.co
 import { LifecyclePolicyComponent } from '../../components/lifecycle-policy/lifecycle-policy.component';
 import { RateLimitStatusComponent } from '../../components/rate-limit-status/rate-limit-status.component';
 import { FeaturesOverviewComponent } from '../../components/features-overview/features-overview.component';
+import { AdvancedSearchComponent } from '../../components/advanced-search/advanced-search.component';
+import { VersionManagementComponent } from '../../components/version-management/version-management.component';
 
 @Component({
   selector: 'app-multi-protocol-dashboard',
@@ -29,7 +31,9 @@ import { FeaturesOverviewComponent } from '../../components/features-overview/fe
     FileUploadComponent,
     LifecyclePolicyComponent,
     RateLimitStatusComponent,
-    FeaturesOverviewComponent
+    FeaturesOverviewComponent,
+    AdvancedSearchComponent,
+    VersionManagementComponent
   ],
   template: `
     <div class="multi-protocol-dashboard">
@@ -335,6 +339,63 @@ import { FeaturesOverviewComponent } from '../../components/features-overview/fe
                         <span class="health-indicator healthy"></span>
                         <span class="health-label">Queue Length</span>
                         <span class="health-value">23</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </tab>
+
+          <!-- Advanced Search Tab -->
+          <tab heading="🔍 Advanced Search" [disabled]="!isProtocolEnabled('rest')">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h5>Smart Search & Discovery</h5>
+                <p class="text-muted">Find anything in your storage with powerful search capabilities</p>
+              </div>
+              
+              <app-advanced-search></app-advanced-search>
+            </div>
+          </tab>
+
+          <!-- Version Management Tab -->
+          <tab heading="📚 Version Management" [disabled]="!isProtocolEnabled('rest')">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h5>File Version Control</h5>
+                <p class="text-muted">Track, compare, and restore different versions of your files</p>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-12">
+                  <app-version-management 
+                    [bucketName]="selectedBucketName || 'default'"
+                    [objectKey]="selectedObjectKey || ''">
+                  </app-version-management>
+                </div>
+              </div>
+              
+              <div class="row mt-4">
+                <div class="col-lg-12">
+                  <div class="version-info-card">
+                    <h6>🔄 Version Control Features</h6>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <ul>
+                          <li>📈 Complete version history tracking</li>
+                          <li>⚖️ Visual version comparison</li>
+                          <li>🔄 One-click version restore</li>
+                          <li>🏷️ Custom version tagging</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-6">
+                        <ul>
+                          <li>📊 Storage analytics and insights</li>
+                          <li>🗑️ Safe version deletion</li>
+                          <li>📋 Change history timeline</li>
+                          <li>💾 Storage optimization</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
@@ -776,12 +837,40 @@ import { FeaturesOverviewComponent } from '../../components/features-overview/fe
         grid-template-columns: 1fr;
       }
     }
+
+    /* New Feature Components Styles */
+    .version-info-card {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .version-info-card h6 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .version-info-card ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .version-info-card li {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #495057;
+    }
   `]
 })
 export class MultiProtocolDashboardComponent implements OnInit {
   enabledProtocols: Set<string> = new Set(['rest']); // REST API is always enabled
   authToken: string = '';
   selectedBucketId: number | undefined;
+  selectedBucketName: string = '';
+  selectedObjectKey: string = '';
 
   ngOnInit(): void {
     // Get auth token from storage

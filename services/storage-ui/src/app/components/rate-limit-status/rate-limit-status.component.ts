@@ -1,4 +1,5 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RateLimitInfo } from '../../services/storage.service';
@@ -6,6 +7,7 @@ import { RateLimitInfo } from '../../services/storage.service';
 @Component({
   selector: 'app-rate-limit-status',
   standalone: true,
+  imports: [CommonModule],
   template: `
     <div class="rate-limit-status" 
          [class.alert-warning]="warningLevel === 'warning'"

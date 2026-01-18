@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -11,8 +11,8 @@ pub struct DownloadMetrics {
     pub key: String,
     pub download_count: u64,
     pub total_bytes: u64,
-    pub window_start: Instant,
-    pub last_download: Instant,
+    pub window_start: SystemTime,
+    pub last_download: SystemTime,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,7 +51,7 @@ impl MetricsService {
         let key = format!("{}:{}:{}", user_id, bucket, key);
         let mut metrics = self.metrics.write().await;
         
-        let now = Instant::now();
+        let now = SystemTime::now();
         
         if let Some(metric) = metrics.get_mut(&key) {
             // Update existing metric
@@ -60,20 +60,20 @@ impl MetricsService {
             metric.last_download = now;
             
             // Reset window if expired
-            if now.duration_since(metric.window_start) > Duration::from_secs(self.window_minutes * 60) {
+            if now.duration_since(metric.window_start).unwrap_or(Duration::ZERO) > Duration::from_secs(self.window_minutes * 60) {
                 metric.download_count = 1;
                 metric.total_bytes = bytes;
                 metric.window_start = now;
             }
         } else {
             // Create new metric
-            metrics.insert(key, DownloadMetrics {
+            metrics.insert(key.clone(), DownloadMetrics {
                 user_id: user_id.to_string(),
                 bucket: bucket.to_string(),
                 key: key.to_string(),
                 download_count: 1,
                 total_bytes: bytes,
-                window_start: now,
+                window_start: SystemTime::now(),
                 last_download: now,
             });
         }
@@ -92,8 +92,8 @@ impl MetricsService {
         
         if let Some(metric) = metrics.get(&key) {
             // Check if within window and exceeds threshold
-            let now = Instant::now();
-            let window_duration = now.duration_since(metric.window_start);
+            let now = SystemTime::now();
+            let window_duration = now.duration_since(metric.window_start).unwrap_or(Duration::ZERO);
             
             if window_duration <= Duration::from_secs(self.window_minutes * 60) 
                 && metric.download_count > self.threshold {
@@ -120,11 +120,11 @@ impl MetricsService {
 
     pub async fn cleanup_expired_metrics(&self) {
         let mut metrics = self.metrics.write().await;
-        let now = Instant::now();
+        let now = SystemTime::now();
         let window_duration = Duration::from_secs(self.window_minutes * 60);
         
         metrics.retain(|_, metric| {
-            now.duration_since(metric.window_start) <= window_duration * 2 // Keep for 2x window time
+            now.duration_since(metric.window_start).unwrap_or(Duration::ZERO) <= window_duration * 2 // Keep for 2x window time
         });
     }
 

@@ -90,7 +90,7 @@ export class BackendIntegrationService {
           results[index] = {
             name: this.services[index].name,
             url: this.services[index].url,
-            status: 'error',
+            status: 'error' as const,
             lastChecked: new Date()
           };
           completed++;
@@ -185,7 +185,7 @@ export class BackendIntegrationService {
           observer.next({
             name: 'WebSocket',
             url,
-            status: 'offline',
+            status: 'offline' as const,
             lastChecked: new Date(),
             responseTime: Date.now() - startTime
           });
@@ -210,7 +210,7 @@ export class BackendIntegrationService {
           observer.next({
             name: 'WebSocket',
             url,
-            status: 'error',
+            status: 'error' as const,
             lastChecked: new Date(),
             responseTime: Date.now() - startTime
           });
@@ -220,7 +220,7 @@ export class BackendIntegrationService {
         observer.next({
           name: 'WebSocket',
           url,
-          status: 'error',
+          status: 'error' as const,
           lastChecked: new Date(),
           responseTime: Date.now() - startTime
         });
@@ -242,14 +242,14 @@ export class BackendIntegrationService {
       map(() => ({
         name: 'S3 API',
         url,
-        status: 'online',
+        status: 'online' as const,
         lastChecked: new Date(),
         responseTime: Date.now() - startTime
       })),
       catchError(() => of({
         name: 'S3 API',
         url,
-        status: 'offline',
+        status: 'offline' as const,
         lastChecked: new Date(),
         responseTime: Date.now() - startTime
       }))

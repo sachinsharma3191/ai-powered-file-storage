@@ -590,7 +590,7 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
         this.buckets = buckets;
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Failed to load buckets:', error);
         this.loading = false;
       }
@@ -629,7 +629,7 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
         this.filterObjects();
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Failed to load objects:', error);
         this.loading = false;
       }
@@ -684,11 +684,12 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
     this.refreshObjects();
   }
 
-  getPathUpTo(part: string): void {
+  getPathUpTo(part: string): string {
     const index = this.pathParts.indexOf(part);
     if (index >= 0) {
-      this.navigateToPath(this.pathParts.slice(0, index + 1).join('/'));
+      return this.pathParts.slice(0, index + 1).join('/');
     }
+    return '';
   }
 
   createBucket(): void {
@@ -700,7 +701,7 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
         this.newBucketName = '';
         this.refreshBuckets();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Failed to create bucket:', error);
       }
     });
@@ -714,7 +715,7 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
       next: () => {
         this.refreshBuckets();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Failed to delete bucket:', error);
       }
     });
@@ -737,7 +738,7 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Failed to download object:', error);
       }
     });
@@ -751,7 +752,7 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
       next: () => {
         this.refreshObjects();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Failed to delete object:', error);
       }
     });
@@ -791,7 +792,7 @@ export class S3BrowserComponent implements OnInit, OnDestroy {
         next: () => {
           console.log(`Uploaded ${file.name}`);
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error(`Failed to upload ${file.name}:`, error);
         }
       });

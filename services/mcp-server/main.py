@@ -16,10 +16,11 @@ from dataclasses import dataclass
 import httpx
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
+from mcp.server.lowlevel.server import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import (
     Resource, Tool, TextContent, ImageContent, EmbeddedResource,
-    CallToolResult, GetResourceResult, ListResourcesResult,
+    CallToolResult, ListResourcesResult,
     ListToolsResult
 )
 
@@ -138,8 +139,8 @@ async def handle_list_resources() -> List[Resource]:
     
     return resources
 
-@server.get_resource()
-async def handle_get_resource(uri: str) -> GetResourceResult:
+@server.read_resource()
+async def handle_get_resource(uri: str) -> dict:
     """Get a specific storage resource"""
     config = get_storage_config()
     client = StorageClient(config)
@@ -160,9 +161,9 @@ async def handle_get_resource(uri: str) -> GetResourceResult:
                 "timestamp": datetime.utcnow().isoformat()
             }
             
-            return GetResourceResult(
-                contents=[TextContent(type="text", text=json.dumps(content, indent=2))]
-            )
+            return {
+                "contents": [TextContent(type="text", text=json.dumps(content, indent=2))]
+            }
     
     raise ValueError(f"Unknown resource: {uri}")
 
@@ -417,7 +418,7 @@ async def main():
                 server_name="ai-storage-mcp",
                 server_version="1.0.0",
                 capabilities=server.get_capabilities(
-                    notification_options=None,
+                    notification_options=NotificationOptions(),
                     experimental_capabilities={}
                 )
             )

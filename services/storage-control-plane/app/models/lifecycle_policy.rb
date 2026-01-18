@@ -6,7 +6,7 @@ class LifecyclePolicy < ApplicationRecord
   validates :bucket, presence: true
   validates :rules, presence: true
   
-  serialize :rules, JSON
+  serialize :rules, coder: JSON
   
   # Apply lifecycle rules to objects
   def self.apply_to_bucket(bucket)

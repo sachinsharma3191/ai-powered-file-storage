@@ -17,7 +17,7 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copy built assets
-COPY --from=build /app/dist/storage-ui/browser /usr/share/nginx/html
+COPY --from=build /app/dist/ai-powered-file-storage-ui/browser /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Add health check

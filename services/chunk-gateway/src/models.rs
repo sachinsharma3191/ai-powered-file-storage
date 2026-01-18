@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::auth::{AuthService, Claims};
 use crate::events::EventService;
@@ -10,7 +11,7 @@ use crate::storage::StorageService;
 pub struct AppState {
     pub auth_service: AuthService,
     pub storage_service: StorageService,
-    pub metrics_service: MetricsService,
+    pub metrics_service: Arc<MetricsService>,
     pub event_service: EventService,
 }
 
@@ -24,7 +25,7 @@ impl AppState {
         Self {
             auth_service,
             storage_service,
-            metrics_service,
+            metrics_service: Arc::new(metrics_service),
             event_service,
         }
     }

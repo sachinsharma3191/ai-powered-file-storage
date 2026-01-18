@@ -26,7 +26,7 @@ export class WebsocketService {
   constructor(private backendIntegration: BackendIntegrationService) {
     // Use backend integration for service discovery
     const serviceUrls = this.backendIntegration.getServiceUrls();
-    this.websocketUrl = serviceUrls.websocketUrl;
+    this.websocketUrl = serviceUrls['websocketUrl'];
   }
 
   connect(token: string, bucketId?: number): void {

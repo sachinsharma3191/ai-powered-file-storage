@@ -52,7 +52,7 @@ services:
   storage-control-plane:
     build:
       context: ./services/storage-control-plane
-      dockerfile: Dockerfile.test
+      dockerfile: Dockerfile.simple
     depends_on:
       postgres:
         condition: service_healthy

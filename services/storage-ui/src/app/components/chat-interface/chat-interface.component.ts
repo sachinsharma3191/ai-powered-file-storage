@@ -37,7 +37,7 @@ import { Subscription } from 'rxjs';
           <h6>📚 Available Commands</h6>
           <div class="command-categories">
             <div class="category">
-              <h7>📦 Bucket Operations</h7>
+              <h6>📦 Bucket Operations</h6>
               <ul>
                 <li><code>Create a bucket called [name]</code></li>
                 <li><code>List all buckets</code></li>
@@ -45,7 +45,7 @@ import { Subscription } from 'rxjs';
               </ul>
             </div>
             <div class="category">
-              <h7>📄 File Operations</h7>
+              <h6>📄 File Operations</h6>
               <ul>
                 <li><code>Show files in bucket [name]</code></li>
                 <li><code>Upload file [filename] to bucket [name]</code></li>
@@ -54,7 +54,7 @@ import { Subscription } from 'rxjs';
               </ul>
             </div>
             <div class="category">
-              <h7>🔍 Search & Info</h7>
+              <h6>🔍 Search & Info</h6>
               <ul>
                 <li><code>Search for [pattern] files in bucket [name]</code></li>
                 <li><code>Get info about file [filename] in bucket [name]</code></li>
@@ -63,7 +63,7 @@ import { Subscription } from 'rxjs';
             </div>
           </div>
           <div class="examples">
-            <h7>💡 Example Conversations</h7>
+            <h6>💡 Example Conversations</h6>
             <div class="example">
               <strong>You:</strong> "Create a bucket called my-documents"<br>
               <strong>Bot:</strong> "✅ Bucket 'my-documents' created successfully"
@@ -100,11 +100,11 @@ import { Subscription } from 'rxjs';
                 <div class="command-info">
                   <span class="command-intent">{{ message.command.intent }}</span>
                   <span class="command-protocol">{{ message.command.protocol }}</span>
-                  <span class="command-confidence">{{ Math.round(message.command.confidence * 100) }}% confidence</span>
+                  <span class="command-confidence">{{ round(message.command.confidence * 100) }}%</span>
                 </div>
-                <div class="command-params" *ngIf="Object.keys(message.command.parameters).length > 0">
+                <div class="command-params" *ngIf="keys(message.command.parameters).length > 0">
                   <strong>Parameters:</strong>
-                  <pre>{{ JSON.stringify(message.command.parameters, null, 2) }}</pre>
+                  <pre>{{ message.command.parameters | json }}</pre>
                 </div>
               </div>
 
@@ -119,7 +119,7 @@ import { Subscription } from 'rxjs';
                   </span>
                 </div>
                 <div class="result-data" *ngIf="message.result.data">
-                  <pre>{{ JSON.stringify(message.result.data, null, 2) }}</pre>
+                  <pre>{{ message.result.data | json }}</pre>
                 </div>
               </div>
 
@@ -901,11 +901,19 @@ export class ChatInterfaceComponent implements OnInit, OnDestroy {
     }, 100);
   }
 
-  private formatTime(timestamp: Date): string {
+  protected formatTime(timestamp: Date): string {
     return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  private trackByMessage(index: number, message: ChatResponse): string {
+  protected trackByMessage(index: number, message: ChatResponse): string {
     return `${message.timestamp.getTime()}-${message.isUser}`;
+  }
+
+  protected round(value: number): number {
+    return Math.round(value);
+  }
+
+  protected keys(obj: any): string[] {
+    return Object.keys(obj);
   }
 }

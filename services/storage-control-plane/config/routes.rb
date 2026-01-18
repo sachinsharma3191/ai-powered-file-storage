@@ -12,7 +12,7 @@ Rails.application.routes.draw do
     
     # S3 Object Operations
     get ":bucket_name" => "s3#list_objects"
-    head ":bucket_name/:key" => "s3#head_object"
+    match ":bucket_name/:key" => "s3#head_object", via: :head
     get ":bucket_name/:key" => "s3#get_object"
     put ":bucket_name/:key" => "s3#put_object"
     delete ":bucket_name/:key" => "s3#delete_object"
@@ -45,10 +45,18 @@ Rails.application.routes.draw do
 
     resources :api_keys, only: %i[index create]
 
+    post "scoped_tokens" => "scoped_tokens#create"
+
+    # Advanced Search
+    get "search" => "search#search"
+    get "search/semantic" => "search#semantic_search"
+    get "search/suggestions" => "search#suggestions"
+    get "search/analytics" => "search#analytics"
+
     resources :buckets, param: :bucket_name, only: %i[index create show destroy] do
       # Objects (metadata + listing)
       get "objects" => "objects#index"
-      head "objects/:key" => "objects#head"
+      match "objects/:key" => "objects#head", via: :head
       delete "objects/:key" => "objects#destroy"
       
       # Simple upload (small objects)
@@ -63,6 +71,16 @@ Rails.application.routes.draw do
       
       # Download
       post "objects/:key:download-url" => "objects#download_url"
+      
+      # Version Management
+      get "objects/:key/versions" => "versions#index"
+      get "objects/:key/versions/:id" => "versions#show"
+      post "objects/:key/versions/:id/restore" => "versions#restore"
+      get "objects/:key/versions/:id/compare" => "versions#compare"
+      delete "objects/:key/versions/:id" => "versions#destroy"
+      get "objects/:key/versions/history" => "versions#history"
+      post "objects/:key/versions/:id/tag" => "versions#tag"
+      get "objects/:key/versions/analytics" => "versions#analytics"
       
       # Bucket policy
       put "policy" => "buckets#set_policy"

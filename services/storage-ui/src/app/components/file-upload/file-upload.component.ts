@@ -169,12 +169,12 @@ import { FileSecurityService, FileSecurityResult } from '../../services/file-sec
           <li>• Suspicious filenames are flagged</li>
           <li>• Double extensions are monitored</li>
         </ul>
-        <button (click)="showSecurityDetails = !showSecurityDetails" 
+        <button (click)="showSecurityDetails.set(!showSecurityDetails())" 
                 class="text-blue-500 text-sm mt-2 hover:underline">
-          {{ showSecurityDetails ? 'Hide' : 'Show' }} Detailed Security Rules
+          {{ showSecurityDetails() ? 'Hide' : 'Show' }} Detailed Security Rules
         </button>
         
-        @if (showSecurityDetails) {
+        @if (showSecurityDetails()) {
           <div class="security-rules mt-2 p-2 bg-white rounded border">
             @for (rule of securityRules(); track rule.name) {
               <div class="rule-item mb-2 pb-2 border-b last:border-b-0">

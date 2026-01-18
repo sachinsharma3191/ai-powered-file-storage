@@ -1,9 +1,29 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { BackendIntegrationService } from './backend-integration.service';
+
+export interface S3Bucket {
+  Name: string;
+  CreationDate: string;
+}
+
+export interface S3Object {
+  Key: string;
+  LastModified: string;
+  ETag: string;
+  Size: number;
+  StorageClass: string;
+  Owner: {
+    ID: string;
+    DisplayName: string;
+  };
+}
+
+export interface S3ListBucketsResponse {
+  ListAllMyBucketsResult: {
     Owner: {
       ID: string;
       DisplayName: string;
@@ -58,7 +78,7 @@ export class S3Service {
   ) {
     // Use backend integration for service discovery
     const serviceUrls = this.backendIntegration.getServiceUrls();
-    this.baseUrl = serviceUrls.s3ApiUrl;
+    this.baseUrl = serviceUrls['s3ApiUrl'];
   }
 
   private getHeaders(): HttpHeaders {
@@ -210,10 +230,23 @@ export class S3Service {
   }
 
   abortMultipartUpload(bucketName: string, key: string, uploadId: string): Observable<void> {
-    return this.http.delete(
-      `${this.baseUrl}/${bucketName}/${encodeURIComponent(key)}?uploadId=${uploadId}`, 
-      { headers: this.getHeaders() }
-    ).pipe(
+    return this.http.delete<void>(`${this.baseUrl}/${bucketName}/${encodeURIComponent(key)}?uploadId=${uploadId}`, { headers: this.getHeaders() })
+    .pipe(
+      catchError(error => this.handleError(error))
+    );
+  }
+
+  createBucket(bucketName: string, region?: string): Observable<any> {
+    const body = region ? `<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><LocationConstraint>${region}</LocationConstraint></CreateBucketConfiguration>` : '';
+    return this.http.put<any>(`${this.baseUrl}/${bucketName}`, body, { headers: this.getHeaders() })
+    .pipe(
+      catchError(error => this.handleError(error))
+    );
+  }
+
+  deleteBucket(bucketName: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${bucketName}`, { headers: this.getHeaders() })
+    .pipe(
       catchError(error => this.handleError(error))
     );
   }

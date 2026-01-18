@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { map, catchError, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { BackendIntegrationService } from './backend-integration.service';
 
@@ -92,7 +92,7 @@ export class McpService {
   private loadAvailableTools(): void {
     this.http.get<{ tools: MCPTool[] }>(`${this.baseUrl}/tools`).pipe(
       map(response => response.tools || []),
-      tap(tools => this.availableTools.next(tools)),
+      tap((tools: any) => this.availableTools.next(tools)),
       catchError(() => {
         this.availableTools.next([]);
         return [];
@@ -103,7 +103,7 @@ export class McpService {
   private loadAvailableResources(): void {
     this.http.get<{ resources: MCPResource[] }>(`${this.baseUrl}/resources`).pipe(
       map(response => response.resources || []),
-      tap(resources => this.availableResources.next(resources)),
+      tap((resources: any) => this.availableResources.next(resources)),
       catchError(() => {
         this.availableResources.next([]);
         return [];
@@ -282,11 +282,11 @@ export class McpService {
   }
 
   getToolByName(name: string): MCPTool | undefined {
-    return this.availableTools.value.find(tool => tool.name === name);
+    return this.availableTools.value.find((tool: any) => tool.name === name);
   }
 
   getResourcesByType(type: string): MCPResource[] {
-    return this.availableResources.value.filter(resource => 
+    return this.availableResources.value.filter((resource: any) => 
       resource.uri.includes(type)
     );
   }

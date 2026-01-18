@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { BackendIntegrationService, BackendHealth, ServiceStatus } from '../../services/backend-integration.service';
 
 @Component({
   selector: 'app-backend-status',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   template: `
     <div class="backend-status">
       <div class="status-header">
