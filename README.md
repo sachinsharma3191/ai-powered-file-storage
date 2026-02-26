@@ -24,13 +24,13 @@ A comprehensive, self-hosted file storage platform with AI-powered capabilities.
                                  │
 ┌─────────────────────────────────┼─────────────────────────────────┐
 │                    Storage Control Plane                          │
-│                      (Ruby on Rails)                             │
+│                      (Ruby on Rails)                              │
 │  • Authentication & Authorization                                 │
 │  • Bucket & Object Management                                     │
 │  • API Key Management                                             │
 │  • Event Emission (Redis Streams)                                 │
 └───────────────────────────────────────────────────────────────────┘
-                                 │
+                                  │
                     ┌─────────────┴─────────────┐
                     │                           │
         ┌─────────────────┐           ┌─────────────────┐
